@@ -123,6 +123,32 @@
   }
   .category-label:first-child { border-top:none; padding-top:0; margin-top:0; }
 
+  /* ── Species selector ── */
+  .species-card {
+    background:var(--water-light); border:1.5px solid var(--water); border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
+  }
+  .species-card label { font-size:12px; font-weight:800; color:var(--water);
+    text-transform:uppercase; letter-spacing:.7px; display:block; margin-bottom:10px; }
+  .species-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .species-btn {
+    padding:9px 18px; border-radius:20px; border:1.5px solid var(--water);
+    background:var(--white); color:var(--water); font-size:13px; font-weight:700;
+    cursor:pointer; transition:all .15s;
+  }
+  .species-btn:hover  { background:var(--water-light); }
+  .species-btn.active { background:var(--water); color:#fff; }
+
+  /* ── Skill badge ── */
+  .skill-badge {
+    display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase;
+    letter-spacing:.6px; padding:3px 10px; border-radius:12px; margin-top:6px;
+  }
+  .skill-Beginner     { background:#e6f4e6; color:var(--temp-good); border:1px solid var(--temp-good); }
+  .skill-Intermediate { background:#fdf1e0; color:var(--temp-warn); border:1px solid var(--temp-warn); }
+  .skill-Advanced     { background:#fbe7e4; color:var(--temp-bad);  border:1px solid var(--temp-bad); }
+
   /* ── Hatch chart ── */
   .hatch-card {
     background:var(--white); border:1px solid var(--border); border-radius:var(--radius);
@@ -313,6 +339,12 @@
     <p>Pick a pattern below, search for any fly, then grab what you need off the shelves.</p>
   </div>
 
+  <!-- Species Filter -->
+  <div class="species-card">
+    <label>🎣 What Are You Fishing For?</label>
+    <div class="species-grid" id="species-grid"></div>
+  </div>
+
   <!-- Flies of the Week -->
   <div class="fotw-card">
     <label>🔥 Flies of the Week</label>
@@ -320,7 +352,7 @@
   </div>
 
   <!-- What's Hatching Now -->
-  <div class="hatch-card">
+  <div class="hatch-card" id="hatch-card">
     <label>🪰 What's Hatching Now</label>
     <div class="hatch-month-title" id="hatch-month-title"></div>
     <div class="hatch-grid" id="hatch-grid"></div>
@@ -480,6 +512,8 @@ const FLIES = {
     "Adams": {
       desc: "Classic all-purpose dry fly. Size 12–18.",
       yt: "https://www.youtube.com/results?search_query=Adams+dry+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard dry fly hook, size 12–18" },
         { label:"Thread", spec:"Grey 8/0" },
@@ -492,6 +526,8 @@ const FLIES = {
     "Parachute Adams": {
       desc: "Parachute style — highly visible, sits low in film. Size 12–18.",
       yt: "https://www.youtube.com/results?search_query=Parachute+Adams+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard dry fly hook, size 12–18" },
         { label:"Thread", spec:"Grey 8/0" },
@@ -504,6 +540,8 @@ const FLIES = {
     "Elk Hair Caddis": {
       desc: "The most versatile caddis imitation. Size 12–18.",
       yt: "https://www.youtube.com/results?search_query=Elk+Hair+Caddis+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Beginner",
       materials: [
         { label:"Hook", spec:"Standard dry fly hook, size 12–18" },
         { label:"Thread", spec:"Tan 8/0" },
@@ -516,6 +554,8 @@ const FLIES = {
     "Blue Winged Olive": {
       desc: "Essential mayfly dry — imitates Baetis. Size 16–22.",
       yt: "https://www.youtube.com/results?search_query=Blue+Winged+Olive+dry+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard dry fly hook, size 16–22" },
         { label:"Thread", spec:"Olive 8/0 or 70-denier" },
@@ -528,6 +568,8 @@ const FLIES = {
     "Griffith's Gnat": {
       desc: "Simple midge cluster pattern. Size 18–22.",
       yt: "https://www.youtube.com/results?search_query=Griffiths+Gnat+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Beginner",
       materials: [
         { label:"Hook", spec:"Standard dry fly hook, size 18–22" },
         { label:"Thread", spec:"Black 8/0 or 70-denier" },
@@ -538,6 +580,8 @@ const FLIES = {
     "Stimulator": {
       desc: "Big attractor dry — great for pocket water. Size 8–16.",
       yt: "https://www.youtube.com/results?search_query=Stimulator+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Advanced",
       materials: [
         { label:"Hook", spec:"2XL dry fly hook, size 8–16" },
         { label:"Thread", spec:"Orange 6/0" },
@@ -552,6 +596,8 @@ const FLIES = {
     "Royal Wulff": {
       desc: "Classic attractor with high visibility. Size 10–16.",
       yt: "https://www.youtube.com/results?search_query=Royal+Wulff+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard dry fly hook, size 10–16" },
         { label:"Thread", spec:"Black 8/0" },
@@ -564,6 +610,8 @@ const FLIES = {
     "Sulphur": {
       desc: "One of the defining hatches on PA limestone water. Evening rises May–June are some of the most technical and rewarding dry fly fishing around. Size 16–18.",
       yt: "https://www.youtube.com/results?search_query=Sulphur+dry+fly+tying+tutorial+Pennsylvania",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook",   spec:"Standard dry fly hook, size 16–18" },
         { label:"Thread", spec:"Yellow or tan 8/0" },
@@ -576,6 +624,8 @@ const FLIES = {
     "Green Drake": {
       desc: "The most anticipated hatch in PA fly fishing. Late May on the right creek, massive green drakes pull trophy wild browns to the surface. Size 8–12.",
       yt: "https://www.youtube.com/results?search_query=Green+Drake+dry+fly+tying+Pennsylvania+tutorial",
+      species: ["Trout"],
+      skill: "Advanced",
       materials: [
         { label:"Hook",   spec:"Standard dry fly hook, size 8–12" },
         { label:"Thread", spec:"Olive 3/0 or 6/0" },
@@ -588,6 +638,8 @@ const FLIES = {
     "Trico": {
       desc: "The signature late-summer hatch on PA limestone streams. Morning spinner falls (7–9am, July–August) create frenzied feeding on even the most educated trout. Size 20–26.",
       yt: "https://www.youtube.com/results?search_query=Trico+fly+tying+tutorial+dry+fly",
+      species: ["Trout"],
+      skill: "Advanced",
       materials: [
         { label:"Hook",   spec:"Midge/dry fly hook, size 20–26" },
         { label:"Thread", spec:"Black 8/0 or 70-denier" },
@@ -602,6 +654,8 @@ const FLIES = {
     "Pheasant Tail Nymph": {
       desc: "Frank Sawyer's classic — imitates many mayfly nymphs. Size 12–18.",
       yt: "https://www.youtube.com/results?search_query=Pheasant+Tail+Nymph+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard nymph hook, size 12–18" },
         { label:"Thread", spec:"Brown 8/0" },
@@ -616,6 +670,8 @@ const FLIES = {
     "Hare's Ear Nymph": {
       desc: "The most versatile nymph ever tied. Size 12–18.",
       yt: "https://www.youtube.com/results?search_query=Hares+Ear+Nymph+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Beginner",
       materials: [
         { label:"Hook", spec:"Standard nymph hook, size 12–18" },
         { label:"Thread", spec:"Brown or tan 8/0" },
@@ -629,6 +685,8 @@ const FLIES = {
     "Copper John": {
       desc: "John Barr's fast-sinking nymph. Size 12–18.",
       yt: "https://www.youtube.com/results?search_query=Copper+John+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard nymph hook, size 12–18" },
         { label:"Bead", spec:"Gold tungsten bead" },
@@ -643,6 +701,8 @@ const FLIES = {
     "Zebra Midge": {
       desc: "Simple, deadly midge larva. Size 18–22.",
       yt: "https://www.youtube.com/results?search_query=Zebra+Midge+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Beginner",
       materials: [
         { label:"Hook", spec:"Midge hook (TMC 2488 or Mustad C49S), size 18–22" },
         { label:"Bead", spec:"Silver tungsten bead, 7/64\"" },
@@ -654,6 +714,8 @@ const FLIES = {
     "San Juan Worm": {
       desc: "Ridiculously effective. Never tell anyone you used it. Size 10–14.",
       yt: "https://www.youtube.com/results?search_query=San+Juan+Worm+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Beginner",
       materials: [
         { label:"Hook", spec:"Scud or curved hook, size 10–14" },
         { label:"Thread", spec:"Red or pink 140-denier" },
@@ -663,6 +725,8 @@ const FLIES = {
     "Prince Nymph": {
       desc: "Attractor nymph with great movement. Size 10–16.",
       yt: "https://www.youtube.com/results?search_query=Prince+Nymph+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard nymph hook, size 10–16" },
         { label:"Thread", spec:"Black 8/0" },
@@ -678,6 +742,8 @@ const FLIES = {
     "Woolly Bugger": {
       desc: "The most productive streamer ever. Tie it in black, olive, and white. Size 4–10.",
       yt: "https://www.youtube.com/results?search_query=Woolly+Bugger+fly+tying+tutorial",
+      species: ["Trout", "Smallmouth"],
+      skill: "Beginner",
       materials: [
         { label:"Hook", spec:"3XL streamer hook, size 4–10" },
         { label:"Thread", spec:"Black 3/0 or 6/0" },
@@ -690,6 +756,8 @@ const FLIES = {
     "Clouser Minnow": {
       desc: "Bob Clouser's legendary minnow pattern. Size 2–8.",
       yt: "https://www.youtube.com/results?search_query=Clouser+Minnow+fly+tying+tutorial",
+      species: ["Trout", "Smallmouth"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard streamer hook, size 2–8" },
         { label:"Thread", spec:"White 3/0 or 6/0" },
@@ -701,6 +769,8 @@ const FLIES = {
     "Kelly Galloup Stacked Blonde": {
       desc: "Kelly Galloup's big-fish streamer built with layered bucktail for a pulsing baitfish profile. Size 1/0–4.",
       yt: "https://www.youtube.com/results?search_query=Kelly+Galloup+Stacked+Blonde+streamer+tying",
+      species: ["Trout"],
+      skill: "Advanced",
       materials: [
         { label:"Hook", spec:"4XL streamer hook, size 1/0–4" },
         { label:"Thread", spec:"White 3/0" },
@@ -714,6 +784,8 @@ const FLIES = {
     "Blane Chocklett Chocolate Game Changer": {
       desc: "Blane Chocklett's articulated Game Changer in chocolate — a multi-jointed streamer that swims like a real baitfish. Size 2/0–2.",
       yt: "https://www.youtube.com/results?search_query=Blane+Chocklett+Game+Changer+tying+tutorial",
+      species: ["Trout"],
+      skill: "Advanced",
       materials: [
         { label:"Hook", spec:"Trailer hook, size 2/0–2" },
         { label:"Shanks", spec:"Articulated shanks, 25mm and 35mm, 3–4 sections" },
@@ -729,6 +801,8 @@ const FLIES = {
     "Dave's Hopper": {
       desc: "Summer staple for trout rising to grasshoppers. Size 8–14.",
       yt: "https://www.youtube.com/results?search_query=Daves+Hopper+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Advanced",
       materials: [
         { label:"Hook", spec:"2XL dry fly hook, size 8–14" },
         { label:"Thread", spec:"Yellow 6/0" },
@@ -742,6 +816,8 @@ const FLIES = {
     "Black Ant": {
       desc: "Essential summer terrestrial. Size 14–18.",
       yt: "https://www.youtube.com/results?search_query=Black+Ant+dry+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Beginner",
       materials: [
         { label:"Hook", spec:"Standard dry fly hook, size 14–18" },
         { label:"Thread", spec:"Black 8/0" },
@@ -754,6 +830,8 @@ const FLIES = {
     "Indicator Ant": {
       desc: "Black ant with a hi-vis hackle collar for visibility on the water. Size 14–18.",
       yt: "https://www.youtube.com/results?search_query=Indicator+Ant+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Beginner",
       materials: [
         { label:"Hook", spec:"Standard dry fly hook, size 14–18" },
         { label:"Thread", spec:"Black 8/0" },
@@ -765,6 +843,8 @@ const FLIES = {
     "Foam Grasshopper": {
       desc: "Foam-bodied hopper with knotted legs, floats high all summer. Size 8–12.",
       yt: "https://www.youtube.com/results?search_query=Foam+Grasshopper+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"2XL dry fly hook, size 8–12" },
         { label:"Thread", spec:"Tan or yellow 6/0" },
@@ -777,6 +857,8 @@ const FLIES = {
     "Inchworm": {
       desc: "Dead-simple summer terrestrial, deadly when worms drop from overhanging trees. Size 12–16.",
       yt: "https://www.youtube.com/results?search_query=Inchworm+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Beginner",
       materials: [
         { label:"Hook", spec:"Standard dry fly or scud hook, size 12–16" },
         { label:"Thread", spec:"Green or white 6/0–8/0" },
@@ -786,6 +868,8 @@ const FLIES = {
     "Japanese Beetle": {
       desc: "Iridescent beetle pattern for the real thing's peak activity in July–August. Size 12–14.",
       yt: "https://www.youtube.com/results?search_query=Japanese+Beetle+fly+tying+tutorial",
+      species: ["Trout"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard dry fly hook, size 12–14" },
         { label:"Thread", spec:"Black or brown 8/0" },
@@ -799,6 +883,8 @@ const FLIES = {
     "Sneaky Pete Popper": {
       desc: "Classic sliding-head foam popper — the workhorse smallmouth surface fly. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Sneaky+Pete+Popper+fly+tying+tutorial",
+      species: ["Smallmouth"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"3XL streamer/popper hook, size 4–8" },
         { label:"Thread", spec:"Heavy mono thread or 3/0, color to match body" },
@@ -812,6 +898,8 @@ const FLIES = {
     "Foam Gurgler": {
       desc: "Jack Gartside's foam-backed surface fly — no hard popper head needed, and the folded foam lip 'gurgles' on the retrieve. Easier first popper-style tie than a hard-body popper. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Gurgler+fly+tying+tutorial",
+      species: ["Smallmouth"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard or 2XL streamer hook, size 4–8" },
         { label:"Thread", spec:"3/0, color to match body" },
@@ -825,6 +913,8 @@ const FLIES = {
     "Near Nuff Crayfish": {
       desc: "Dave Whitlock's classic crayfish imitation — smallmouth eat more crayfish than almost anything else, so this belongs in every box. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Near+Nuff+Crayfish+fly+tying+tutorial",
+      species: ["Smallmouth"],
+      skill: "Advanced",
       materials: [
         { label:"Hook", spec:"2XL–3XL streamer hook, size 4–8" },
         { label:"Thread", spec:"Brown or olive 3/0" },
@@ -839,6 +929,8 @@ const FLIES = {
     "Murray's Hellgrammite": {
       desc: "Harry Murray's Shenandoah smallmouth staple — imitates the hellgrammite nymphs smallmouth key in on year-round. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Murray%27s+Hellgrammite+fly+tying+tutorial",
+      species: ["Smallmouth"],
+      skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"3XL streamer hook, size 4–8" },
         { label:"Thread", spec:"Black 3/0" },
@@ -852,6 +944,8 @@ const FLIES = {
     "Dahlberg Diver": {
       desc: "Larry Dahlberg's spun deer-hair diver — the flat clipped head pushes water and dives on the pause, then pops back up. A different kind of topwater action than a hard-body popper. Size 2–6.",
       yt: "https://www.youtube.com/results?search_query=Dahlberg+Diver+fly+tying+tutorial",
+      species: ["Smallmouth"],
+      skill: "Advanced",
       materials: [
         { label:"Hook", spec:"Standard or 2XL streamer hook, size 2–6" },
         { label:"Thread", spec:"Heavy mono thread or flat waxed nylon, 3/0" },
@@ -936,6 +1030,37 @@ function inferSpecialtyTools(materials) {
   return SPECIALTY_TOOLS.filter(t => t.trigger(materials));
 }
 
+// ── Species filter ────────────────────────────────────────────────────────────
+const SPECIES_OPTIONS = [
+  { key: 'All',        label: 'All Species' },
+  { key: 'Trout',      label: 'Trout' },
+  { key: 'Smallmouth', label: 'Smallmouth Bass' },
+];
+let activeSpecies = 'All';
+
+function matchesSpecies(recipe) {
+  return activeSpecies === 'All' || recipe.species.includes(activeSpecies);
+}
+
+function buildSpeciesSelector() {
+  const grid = document.getElementById('species-grid');
+  grid.innerHTML = '';
+  SPECIES_OPTIONS.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'species-btn' + (opt.key === activeSpecies ? ' active' : '');
+    btn.textContent = opt.label;
+    btn.onclick = () => {
+      activeSpecies = opt.key;
+      trackEvent('select_species', { species: opt.key });
+      buildSpeciesSelector();
+      buildFotw();
+      buildSelector();
+      buildHatchChart();
+    };
+    grid.appendChild(btn);
+  });
+}
+
 // ── Quick-pick selector ──────────────────────────────────────────────────────
 let activeBtn = null;
 
@@ -944,8 +1069,11 @@ const FLIES_OF_THE_WEEK = ["Indicator Ant", "Foam Grasshopper", "Inchworm", "Jap
 
 function buildFotw() {
   const grid = document.getElementById('fotw-grid');
+  grid.innerHTML = '';
   for (const flyName of FLIES_OF_THE_WEEK) {
-    if (!FLY_INDEX[flyName.toLowerCase()]) continue; // skip if a name gets typo'd or removed later
+    const entry = FLY_INDEX[flyName.toLowerCase()];
+    if (!entry) continue; // skip if a name gets typo'd or removed later
+    if (!matchesSpecies(entry.recipe)) continue;
     const btn = document.createElement('button');
     btn.className = 'fly-btn';
     btn.textContent = flyName;
@@ -961,12 +1089,15 @@ function buildFotw() {
 
 function buildSelector() {
   const grid = document.getElementById('fly-grid');
+  grid.innerHTML = '';
   for (const [cat, flies] of Object.entries(FLIES)) {
+    const matchingNames = Object.keys(flies).filter(name => matchesSpecies(flies[name]));
+    if (matchingNames.length === 0) continue;
     const catEl = document.createElement('span');
     catEl.className = 'category-label';
     catEl.textContent = cat;
     grid.appendChild(catEl);
-    for (const flyName of Object.keys(flies)) {
+    for (const flyName of matchingNames) {
       const btn = document.createElement('button');
       btn.className = 'fly-btn';
       btn.textContent = flyName;
@@ -1048,6 +1179,12 @@ const HATCHES = {
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 function buildHatchChart() {
+  const hatchCard = document.getElementById('hatch-card');
+  if (activeSpecies === 'Smallmouth') {
+    hatchCard.style.display = 'none';
+    return;
+  }
+  hatchCard.style.display = '';
   const month = new Date().getMonth() + 1;
   const hatches = HATCHES[month] || [];
   document.getElementById('hatch-month-title').textContent = MONTH_NAMES[month - 1];
@@ -1114,6 +1251,7 @@ function showCuratedFly(name, btn) {
       <div class="recipe-title">
         <h2>🪝 ${name}</h2>
         <p>${recipe.desc}</p>
+        <span class="skill-badge skill-${recipe.skill}">${recipe.skill}</span>
       </div>
       <a class="yt-btn" href="${recipe.yt}" target="_blank">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
@@ -1210,6 +1348,7 @@ document.getElementById('search-input').addEventListener('keydown', e => {
 });
 
 // ── Init ────────────────────────────────────────────────────────────────────
+buildSpeciesSelector();
 buildSelector();
 buildFotw();
 buildHatchChart();
