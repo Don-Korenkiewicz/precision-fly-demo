@@ -742,7 +742,7 @@ const FLIES = {
     "Woolly Bugger": {
       desc: "The most productive streamer ever. Tie it in black, olive, and white. Size 4–10.",
       yt: "https://www.youtube.com/results?search_query=Woolly+Bugger+fly+tying+tutorial",
-      species: ["Trout", "Smallmouth"],
+      species: ["Trout", "Smallmouth", "Largemouth"],
       skill: "Beginner",
       materials: [
         { label:"Hook", spec:"3XL streamer hook, size 4–10" },
@@ -756,7 +756,7 @@ const FLIES = {
     "Clouser Minnow": {
       desc: "Bob Clouser's legendary minnow pattern. Size 2–8.",
       yt: "https://www.youtube.com/results?search_query=Clouser+Minnow+fly+tying+tutorial",
-      species: ["Trout", "Smallmouth"],
+      species: ["Trout", "Smallmouth", "Largemouth"],
       skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard streamer hook, size 2–8" },
@@ -879,11 +879,11 @@ const FLIES = {
       ]
     },
   },
-  "Smallmouth Bass Flies": {
+  "Bass Flies": {
     "Sneaky Pete Popper": {
       desc: "Classic sliding-head foam popper — the workhorse smallmouth surface fly. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Sneaky+Pete+Popper+fly+tying+tutorial",
-      species: ["Smallmouth"],
+      species: ["Smallmouth", "Largemouth"],
       skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"3XL streamer/popper hook, size 4–8" },
@@ -898,7 +898,7 @@ const FLIES = {
     "Foam Gurgler": {
       desc: "Jack Gartside's foam-backed surface fly — no hard popper head needed, and the folded foam lip 'gurgles' on the retrieve. Easier first popper-style tie than a hard-body popper. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Gurgler+fly+tying+tutorial",
-      species: ["Smallmouth"],
+      species: ["Smallmouth", "Largemouth"],
       skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard or 2XL streamer hook, size 4–8" },
@@ -913,7 +913,7 @@ const FLIES = {
     "Near Nuff Crayfish": {
       desc: "Dave Whitlock's classic crayfish imitation — smallmouth eat more crayfish than almost anything else, so this belongs in every box. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Near+Nuff+Crayfish+fly+tying+tutorial",
-      species: ["Smallmouth"],
+      species: ["Smallmouth", "Largemouth"],
       skill: "Advanced",
       materials: [
         { label:"Hook", spec:"2XL–3XL streamer hook, size 4–8" },
@@ -944,7 +944,7 @@ const FLIES = {
     "Dahlberg Diver": {
       desc: "Larry Dahlberg's spun deer-hair diver — the flat clipped head pushes water and dives on the pause, then pops back up. A different kind of topwater action than a hard-body popper. Size 2–6.",
       yt: "https://www.youtube.com/results?search_query=Dahlberg+Diver+fly+tying+tutorial",
-      species: ["Smallmouth"],
+      species: ["Smallmouth", "Largemouth"],
       skill: "Advanced",
       materials: [
         { label:"Hook", spec:"Standard or 2XL streamer hook, size 2–6" },
@@ -1035,6 +1035,7 @@ const SPECIES_OPTIONS = [
   { key: 'All',        label: 'All Species' },
   { key: 'Trout',      label: 'Trout' },
   { key: 'Smallmouth', label: 'Smallmouth Bass' },
+  { key: 'Largemouth', label: 'Largemouth Bass' },
 ];
 let activeSpecies = 'All';
 
@@ -1180,7 +1181,7 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 
 function buildHatchChart() {
   const hatchCard = document.getElementById('hatch-card');
-  if (activeSpecies === 'Smallmouth') {
+  if (activeSpecies !== 'All' && activeSpecies !== 'Trout') {
     hatchCard.style.display = 'none';
     return;
   }
