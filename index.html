@@ -65,27 +65,61 @@
   }
   .welcome-banner h2 { font-size:17px; margin-bottom:4px; }
   .welcome-banner p  { font-size:13px; color:#a8bcc7; }
+  .welcome-banner { padding-bottom:18px; }
 
-  /* ── Search ── */
-  .search-card {
-    background:var(--white); border:1px solid var(--border); border-radius:var(--radius);
-    padding:18px 20px; margin-bottom:20px;
-    box-shadow:0 2px 8px rgba(0,0,0,.06);
+  /* ── Sticky section nav ── */
+  .section-nav {
+    position:sticky; top:0; z-index:30;
+    display:flex; gap:6px; justify-content:center;
+    background:rgba(255,255,255,.94); backdrop-filter:saturate(180%) blur(8px);
+    border-bottom:1px solid var(--border); padding:8px 10px;
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
   }
-  .search-card label { font-size:11px; font-weight:700; color:var(--muted);
-    text-transform:uppercase; letter-spacing:.7px; display:block; margin-bottom:10px; }
-  .search-row { display:flex; gap:8px; }
+  .section-nav button {
+    flex:0 0 auto; padding:8px 14px; border-radius:18px;
+    border:1.5px solid var(--border); background:var(--white);
+    color:var(--text); font-size:13px; font-weight:700; font-family:inherit;
+    cursor:pointer; white-space:nowrap;
+  }
+  .section-nav button:hover { border-color:var(--olive); color:var(--green); }
+  /* Keep the sticky nav (and the bench bar) from covering a jumped-to heading */
+  html { scroll-behavior:smooth; }
+  #sec-patterns, #sec-streams, #hatch-card, #recipe-output { scroll-margin-top:62px; }
+
+  /* ── Search (lives inside the welcome hero) ── */
+  .search-row { display:flex; gap:8px; margin-top:14px; text-align:left; }
+  .search-wrap { position:relative; flex:1; }
   .search-input {
-    flex:1; padding:12px 14px; border-radius:8px; border:1.5px solid var(--border);
-    font-size:15px; font-family:inherit;
+    width:100%; padding:13px 14px; border-radius:8px; border:1.5px solid transparent;
+    font-size:16px; /* 16px stops iOS Safari from zooming the page on focus */
+    font-family:inherit; background:var(--white); color:var(--text);
   }
   .search-input:focus { outline:none; border-color:var(--olive); }
   .search-btn {
-    padding:12px 20px; border-radius:8px; border:none; cursor:pointer;
-    background:var(--green); color:#fff; font-size:14px; font-weight:700;
-    white-space:nowrap;
+    padding:13px 20px; border-radius:8px; border:none; cursor:pointer;
+    background:var(--green); color:#fff; font-size:15px; font-weight:700;
+    font-family:inherit; white-space:nowrap;
   }
   .search-btn:hover { background:var(--green-mid); }
+
+  /* Type-ahead suggestions */
+  .search-suggest {
+    position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:40;
+    background:var(--white); border:1px solid var(--border); border-radius:10px;
+    box-shadow:0 10px 26px rgba(0,0,0,.18); overflow:hidden; text-align:left;
+    max-height:min(52vh,340px); overflow-y:auto;
+  }
+  .suggest-item {
+    display:block; width:100%; text-align:left; background:none; border:none;
+    font-family:inherit; cursor:pointer; padding:11px 14px;
+    border-bottom:1px solid var(--border);
+  }
+  .suggest-item:last-child { border-bottom:none; }
+  .suggest-item:hover, .suggest-item.active { background:var(--olive-light); }
+  .suggest-name { font-size:14px; font-weight:700; color:var(--green-dark); }
+  .suggest-name mark { background:#ffe6c9; color:inherit; padding:0 1px; border-radius:2px; }
+  .suggest-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+  .suggest-item.suggest-fallback .suggest-name { color:var(--green); font-weight:700; }
 
   /* ── Fly quick-pick ── */
   .fotw-card {
@@ -208,12 +242,11 @@
 
   /* Empty state */
   .empty-state {
-    background:var(--white); border:1px solid var(--border); border-radius:var(--radius);
-    padding:40px 24px; text-align:center; color:var(--muted);
+    background:var(--white); border:1px dashed var(--border); border-radius:var(--radius);
+    padding:16px 20px; text-align:center; color:var(--muted);
   }
-  .empty-state .fish { font-size:44px; margin-bottom:12px; }
-  .empty-state h3 { font-size:16px; font-weight:700; color:var(--text); margin-bottom:6px; }
-  .empty-state p  { font-size:13px; }
+  .empty-state h3 { font-size:14px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .empty-state p  { font-size:12.5px; }
 
   /* Not-in-list state */
   .not-listed {
@@ -221,6 +254,10 @@
     padding:16px 20px; margin-bottom:16px; font-size:13px; color:#6a4a10;
   }
   .not-listed b { color:var(--gold); }
+  .did-you-mean {
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+    margin-bottom:16px; font-size:13px; font-weight:600; color:var(--muted);
+  }
 
   /* Video results */
   .video-grid { display:flex; flex-direction:column; gap:10px; }
@@ -340,12 +377,29 @@
   <div class="header-badge">Precision Fly & Tackle</div>
 </div>
 
+<nav class="section-nav" id="section-nav">
+  <button type="button" data-target="sec-patterns">🪝 Patterns</button>
+  <button type="button" data-target="hatch-card">🪰 Hatching</button>
+  <button type="button" data-target="sec-streams">🌊 Streams</button>
+</nav>
+
 <div class="layout-wrap">
 <div class="page">
 
+  <!-- Hero: welcome + search, first thing on the screen after a QR scan -->
   <div class="welcome-banner">
     <h2>Welcome in! 🪝</h2>
-    <p>Pick a pattern below, search for any fly, then grab what you need off the shelves.</p>
+    <p>What are you tying today? Search any fly and we'll show you what to pull off the shelves.</p>
+    <div class="search-row">
+      <div class="search-wrap">
+        <input class="search-input" id="search-input" type="text" enterkeyhint="search"
+               placeholder="Search any fly — e.g. Chubby Chernobyl" autocomplete="off"
+               autocorrect="off" autocapitalize="words" spellcheck="false"
+               role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="search-suggest">
+        <div class="search-suggest" id="search-suggest" role="listbox" hidden></div>
+      </div>
+      <button class="search-btn" id="search-btn" type="button">Search</button>
+    </div>
   </div>
 
   <!-- Species Filter -->
@@ -354,10 +408,24 @@
     <div class="species-grid" id="species-grid"></div>
   </div>
 
+  <!-- Recipe Output -->
+  <div id="recipe-output">
+    <div class="empty-state">
+      <h3>🪝 Search above, or pick a pattern below</h3>
+      <p>Full materials list for our core patterns, plus a tying video for anything else.</p>
+    </div>
+  </div>
+
   <!-- Flies of the Week -->
-  <div class="fotw-card">
+  <div class="fotw-card" id="sec-patterns">
     <label>🔥 Flies of the Week</label>
     <div class="fly-grid" id="fotw-grid"></div>
+  </div>
+
+  <!-- Fly Selector -->
+  <div class="selector-card">
+    <label>Or Choose a Popular Pattern</label>
+    <div class="fly-grid" id="fly-grid"></div>
   </div>
 
   <!-- What's Hatching Now -->
@@ -367,33 +435,9 @@
     <div class="hatch-grid" id="hatch-grid"></div>
   </div>
 
-  <!-- Search -->
-  <div class="search-card">
-    <label>Search Any Fly Pattern</label>
-    <div class="search-row">
-      <input class="search-input" id="search-input" type="text" placeholder="e.g. Chubby Chernobyl, Sex Dungeon..." autocomplete="off">
-      <button class="search-btn" id="search-btn">Search</button>
-    </div>
-  </div>
-
-  <!-- Fly Selector -->
-  <div class="selector-card">
-    <label>Or Choose a Popular Pattern</label>
-    <div class="fly-grid" id="fly-grid"></div>
-  </div>
-
-  <!-- Recipe Output -->
-  <div id="recipe-output">
-    <div class="empty-state">
-      <div class="fish">🪝</div>
-      <h3>Select a pattern or search above</h3>
-      <p>We'll show you the materials list (for our core patterns) and a tying video for anything.</p>
-    </div>
-  </div>
-
 </div>
 
-<div class="stream-sidebar">
+<div class="stream-sidebar" id="sec-streams">
   <div class="stream-panel">
     <div class="stream-panel-header">🌊 PA Trout Stream Conditions</div>
     <div class="stream-body" id="stream-body">
@@ -1065,23 +1109,66 @@ const FLIES = {
   }
 };
 
-// Flat lookup: normalized name -> {catName, flyName, recipe}
+// Flat lookup: normalized name -> {cat, flyName, recipe}
 const FLY_INDEX = {};
+const SEARCH_ENTRIES = [];
 for (const [cat, flies] of Object.entries(FLIES)) {
   for (const [flyName, recipe] of Object.entries(flies)) {
-    FLY_INDEX[flyName.toLowerCase()] = { flyName, recipe };
+    const entry = { cat, flyName, recipe };
+    FLY_INDEX[flyName.toLowerCase()] = entry;
+    SEARCH_ENTRIES.push(Object.assign({
+      norm: normalize(flyName),
+      // Material text is searched too, so "peacock herl" or "tungsten bead"
+      // surfaces the patterns that actually use it.
+      mats: normalize(recipe.materials.map(m => m.label + ' ' + m.spec).join(' ')),
+    }, entry));
   }
 }
 
-function findCuratedMatch(query) {
-  const q = query.trim().toLowerCase();
-  if (!q) return null;
-  if (FLY_INDEX[q]) return FLY_INDEX[q];
-  // substring match either direction (e.g. "adams" matches "Parachute Adams")
-  for (const key of Object.keys(FLY_INDEX)) {
-    if (key.includes(q) || q.includes(key)) return FLY_INDEX[key];
+function normalize(s) {
+  return String(s).toLowerCase().replace(/[^a-z0-9 ]+/g, '').replace(/\s+/g, ' ').trim();
+}
+
+// All chars of `q` appear in `text` in order — forgiving of dropped letters and
+// doubled-letter typos ("wooly bugger", "cluser minnow") without a full
+// edit-distance implementation.
+function isSubsequence(q, text) {
+  let i = 0;
+  for (let j = 0; j < text.length && i < q.length; j++) {
+    if (text[j] === q[i]) i++;
   }
-  return null;
+  return i === q.length;
+}
+
+// Higher is better. >= NAME_MATCH_FLOOR is confident enough to jump straight to
+// the recipe; below that it's only good enough to offer as a suggestion.
+const NAME_MATCH_FLOOR = 70;
+function scoreEntry(entry, q) {
+  const n = entry.norm;
+  const lengthPenalty = Math.min(9, Math.max(0, n.length - q.length) * 0.2);
+  if (n === q) return 100;
+  if (n.startsWith(q)) return 92 - lengthPenalty;
+  if (new RegExp('\\b' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(n)) return 84 - lengthPenalty;
+  if (n.includes(q)) return 76 - lengthPenalty;
+  if (q.includes(n)) return 74;                              // "adams dry fly" -> Adams
+  if (q.length >= 4 && isSubsequence(q, n)) return 55 - lengthPenalty;
+  if (q.length >= 4 && entry.mats.includes(q)) return 30;    // material hit, not a name hit
+  return 0;
+}
+
+function rankFlies(query, limit) {
+  const q = normalize(query);
+  if (!q) return [];
+  return SEARCH_ENTRIES
+    .map(e => ({ entry: e, score: scoreEntry(e, q) }))
+    .filter(r => r.score > 0)
+    .sort((a, b) => b.score - a.score || a.entry.flyName.localeCompare(b.entry.flyName))
+    .slice(0, limit || 8);
+}
+
+function findCuratedMatch(query) {
+  const best = rankFlies(query, 1)[0];
+  return best && best.score >= NAME_MATCH_FLOOR ? best.entry : null;
 }
 
 // ── Specialty tools ──────────────────────────────────────────────────────────
@@ -1433,14 +1520,31 @@ async function showSearchedFly(query) {
     return;
   }
 
-  // Not in our curated list - show a video search and invite a request
+  // Not in our curated list. We never guess a materials list, but a near-miss
+  // (a typo, or a pattern that uses the material they typed) is worth offering
+  // as an explicit "did you mean" the customer has to opt into.
+  const near = rankFlies(query, 3).filter(r => r.score > 0);
+  const didYouMean = near.length
+    ? `<div class="did-you-mean">Did you mean:
+         ${near.map(r => `<button class="fly-btn" type="button" data-suggest="${esc(r.entry.flyName)}">${esc(r.entry.flyName)}</button>`).join(' ')}
+       </div>`
+    : '';
+
   document.getElementById('recipe-output').innerHTML = `
     <div class="not-listed">
       We don't have a full parts list for <b>"${esc(query)}"</b> yet — here's a tying video to check out.
       Ask the counter to add it if you'd like the full build list next time!
     </div>
+    ${didYouMean}
     <div id="video-results"><div class="video-loading">Searching YouTube for tying videos…</div></div>
   `;
+  document.querySelectorAll('#recipe-output [data-suggest]').forEach(b => {
+    b.onclick = () => {
+      const name = b.dataset.suggest;
+      trackEvent('did_you_mean_select', { search_term: query, fly_name: name });
+      showCuratedFly(name, document.querySelector(`.fly-btn[data-fly="${CSS.escape(name)}"]`));
+    };
+  });
   document.getElementById('recipe-output').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
@@ -1455,12 +1559,108 @@ async function showSearchedFly(query) {
 function runSearch() {
   const query = document.getElementById('search-input').value.trim();
   if (!query) return;
+  hideSuggestions();
   showSearchedFly(query);
 }
 
+// ── Type-ahead suggestions ───────────────────────────────────────────────────
+// Standing in a shop on a phone, nobody wants to type "Blane Chocklett Chocolate
+// Game Changer" exactly right. Suggestions show curated hits as you type, and a
+// typo now lands on the real pattern instead of silently falling through to a
+// YouTube search.
+const searchInput  = document.getElementById('search-input');
+const suggestBox   = document.getElementById('search-suggest');
+let suggestions = [];
+let suggestIdx  = -1;
+
+function highlight(name, q) {
+  const i = normalize(name).indexOf(normalize(q));
+  if (q.length < 2 || i < 0) return esc(name);
+  return esc(name.slice(0, i)) + '<mark>' + esc(name.slice(i, i + q.length)) + '</mark>' + esc(name.slice(i + q.length));
+}
+
+function hideSuggestions() {
+  suggestions = [];
+  suggestIdx = -1;
+  suggestBox.hidden = true;
+  suggestBox.innerHTML = '';
+  searchInput.setAttribute('aria-expanded', 'false');
+}
+
+function renderSuggestions() {
+  const q = searchInput.value.trim();
+  if (q.length < 2) return hideSuggestions();
+
+  const ranked = rankFlies(q, 6);
+  suggestions = ranked.map(r => ({
+    kind: 'fly', flyName: r.entry.flyName, cat: r.entry.cat,
+    skill: r.entry.recipe.skill, material: r.score <= 30,
+  }));
+  // Always leave an escape hatch to the video search for anything uncurated.
+  if (!ranked.length || ranked[0].score < 100) {
+    suggestions.push({ kind: 'search', query: q });
+  }
+
+  suggestIdx = -1;
+  suggestBox.innerHTML = suggestions.map((s, i) => s.kind === 'fly'
+    ? `<button class="suggest-item" type="button" role="option" data-i="${i}">
+         <div class="suggest-name">${highlight(s.flyName, q)}</div>
+         <div class="suggest-meta">${esc(s.cat)} · ${esc(s.skill)}${s.material ? ' · uses ' + esc(q) : ''} · full materials list</div>
+       </button>`
+    : `<button class="suggest-item suggest-fallback" type="button" role="option" data-i="${i}">
+         <div class="suggest-name">Search tying videos for "${esc(s.query)}"</div>
+         <div class="suggest-meta">Not one of our curated patterns yet</div>
+       </button>`
+  ).join('');
+
+  suggestBox.querySelectorAll('.suggest-item').forEach(el => {
+    el.onmousedown = e => { e.preventDefault(); chooseSuggestion(Number(el.dataset.i)); };
+  });
+  suggestBox.hidden = false;
+  searchInput.setAttribute('aria-expanded', 'true');
+}
+
+function chooseSuggestion(i) {
+  const s = suggestions[i];
+  if (!s) return;
+  const typed = searchInput.value.trim();
+  hideSuggestions();
+  searchInput.blur();
+  if (s.kind === 'fly') {
+    searchInput.value = s.flyName;
+    trackEvent('search_suggest_select', { search_term: typed, fly_name: s.flyName, typed_length: typed.length });
+    const btn = document.querySelector(`.fly-btn[data-fly="${CSS.escape(s.flyName)}"]`);
+    showCuratedFly(s.flyName, btn);
+  } else {
+    showSearchedFly(s.query);
+  }
+}
+
+function moveSuggestion(delta) {
+  if (!suggestions.length) return;
+  suggestIdx = (suggestIdx + delta + suggestions.length) % suggestions.length;
+  suggestBox.querySelectorAll('.suggest-item').forEach((el, i) => el.classList.toggle('active', i === suggestIdx));
+}
+
 document.getElementById('search-btn').onclick = runSearch;
-document.getElementById('search-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') runSearch();
+searchInput.addEventListener('input', renderSuggestions);
+searchInput.addEventListener('focus', renderSuggestions);
+searchInput.addEventListener('blur', () => setTimeout(hideSuggestions, 120));
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown')      { e.preventDefault(); moveSuggestion(1); }
+  else if (e.key === 'ArrowUp')   { e.preventDefault(); moveSuggestion(-1); }
+  else if (e.key === 'Escape')    { hideSuggestions(); }
+  else if (e.key === 'Enter')     { suggestIdx >= 0 ? chooseSuggestion(suggestIdx) : runSearch(); }
+});
+
+// ── Sticky section nav ───────────────────────────────────────────────────────
+document.querySelectorAll('.section-nav button').forEach(b => {
+  b.onclick = () => {
+    const el = document.getElementById(b.dataset.target);
+    if (!el) return;
+    trackEvent('section_nav', { section: b.dataset.target });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 });
 
 // ── Init ────────────────────────────────────────────────────────────────────
