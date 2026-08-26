@@ -302,6 +302,15 @@
   .stream-book i { color:var(--text); font-style:italic; }
   .stream-book-none { opacity:.7; }
   .stream-book-none i { color:var(--muted); }
+  .stream-stale {
+    background:#fdf1e0; border:1px solid var(--temp-warn); color:#7a4d10;
+    border-radius:8px; padding:10px 12px; margin:4px 2px 10px; font-size:12px; line-height:1.5;
+  }
+  .stream-retry {
+    display:inline-block; margin-top:8px; padding:6px 14px; border-radius:6px;
+    border:1.5px solid var(--water); background:var(--white); color:var(--water);
+    font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
   .stream-footer-note {
     padding:10px 18px; font-size:10.5px; color:var(--muted);
     border-top:1px solid var(--border); background:var(--bg);
@@ -408,6 +417,15 @@ function trackEvent(name, params) {
   if (typeof gtag === 'function') gtag('event', name, params);
 }
 
+// ── HTML escaping ────────────────────────────────────────────────────────────
+// Everything that reaches innerHTML goes through this: customer search text,
+// YouTube titles/channels, and recipe fields (the weekly auto-add job writes
+// recipe text pulled off the web, so it is not fully trusted either).
+const ESC_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ESC_MAP[c]);
+}
+
 // ── Stream Conditions Sidebar (live USGS data) ──────────────────────────────
 const STREAM_SITES = [
   { id: "01548030",  name: "Fishing Creek",    loc: "near Lamar, PA",           page: "218-227" },
@@ -448,54 +466,129 @@ function trendArrow(latest, earliest, kind) {
   return delta > 0 ? `<span class="trend-arrow">▲</span>` : `<span class="trend-arrow">▼</span>`;
 }
 
+// USGS uses large negative sentinels (-999999) for "no reading". Treat those,
+// and anything non-numeric, as missing rather than printing a garbage number.
+function usgsNum(raw) {
+  const n = parseFloat(raw);
+  if (!isFinite(n) || n <= -99999) return null;
+  return n;
+}
+
+const STREAM_CACHE_KEY = "pf_stream_cache_v1";
+const STREAM_URL = `https://waterservices.usgs.gov/nwis/iv/?sites=${STREAM_SITES.map(s => s.id).join(",")}&parameterCd=00010,00060,00065&period=PT3H&format=json`;
+
+function fetchWithTimeout(url, ms) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { signal: ctl.signal }).finally(() => clearTimeout(timer));
+}
+
+// The USGS endpoint fails intermittently. A single blip used to leave the panel
+// dead for the whole visit, so: short timeout, a couple of backed-off retries,
+// then fall back to the last good reading we cached in this browser.
+async function fetchStreamPayload(attempts = 3) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetchWithTimeout(STREAM_URL, 9000);
+      if (!res.ok) throw new Error(`USGS API error ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      lastErr = e;
+      if (i < attempts - 1) await new Promise(r => setTimeout(r, 600 * Math.pow(2, i)));
+    }
+  }
+  throw lastErr;
+}
+
+// Collapse the raw USGS response into { siteId: { paramCd: {latest, earliest} } }
+// plus the timestamp of the newest reading we saw.
+function parseStreamPayload(data) {
+  const series = data.value?.timeSeries || [];
+  const bySite = {};
+  let newest = null;
+  for (const s of series) {
+    const siteNo  = s.sourceInfo.siteCode[0].value;
+    const paramCd = s.variable.variableCode[0].value;
+    const values  = s.values[0].value;
+    if (!values.length) continue;
+    const latest   = usgsNum(values[values.length - 1].value);
+    const earliest = usgsNum(values[0].value);
+    if (latest == null) continue;
+    const when = Date.parse(values[values.length - 1].dateTime);
+    if (isFinite(when) && (newest == null || when > newest)) newest = when;
+    bySite[siteNo] = bySite[siteNo] || {};
+    bySite[siteNo][paramCd] = { latest, earliest };
+  }
+  return { bySite, observedAt: newest };
+}
+
+function readStreamCache() {
+  try {
+    const raw = localStorage.getItem(STREAM_CACHE_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    return c && c.bySite ? c : null;
+  } catch (e) { return null; }
+}
+
+function writeStreamCache(parsed) {
+  try {
+    localStorage.setItem(STREAM_CACHE_KEY, JSON.stringify({
+      bySite: parsed.bySite, observedAt: parsed.observedAt, cachedAt: Date.now()
+    }));
+  } catch (e) { /* private mode / quota — cache is a nicety, not required */ }
+}
+
+function renderStreams(parsed, opts) {
+  const body = document.getElementById("stream-body");
+  const bySite = parsed.bySite || {};
+
+  const rows = STREAM_SITES.map(site => {
+    const r = bySite[site.id] || {};
+    const tempC = r["00010"], flow = r["00060"], gauge = r["00065"];
+    const tempF      = tempC ? cToF(tempC.latest)   : null;
+    const tempFEarly = tempC && tempC.earliest != null ? cToF(tempC.earliest) : null;
+    return { site, tempF, tempFEarly, flow, gauge };
+  });
+
+  const html = rows.map(({ site, tempF, tempFEarly, flow, gauge }) => `
+    <a class="stream-card" href="https://waterdata.usgs.gov/monitoring-location/USGS-${site.id}/" target="_blank" rel="noopener">
+      <div class="stream-name">${esc(site.name)}<span class="stream-loc">${esc(site.loc)}</span></div>
+      <div class="stream-stats">
+        <div class="stream-stat"><span class="stream-stat-val ${tempClass(tempF)}">${tempF != null ? tempF.toFixed(1) + "°F" : "—"}${trendArrow(tempF, tempFEarly, "temp")}</span><span class="stream-stat-label">Temp</span></div>
+        <div class="stream-stat"><span class="stream-stat-val">${flow ? flow.latest.toFixed(1) : "—"}${flow ? trendArrow(flow.latest, flow.earliest, "flow") : ""}</span><span class="stream-stat-label">Flow (cfs)</span></div>
+        <div class="stream-stat"><span class="stream-stat-val">${gauge ? gauge.latest.toFixed(2) + " ft" : "—"}${gauge ? trendArrow(gauge.latest, gauge.earliest, "gauge") : ""}</span><span class="stream-stat-label">Gauge</span></div>
+      </div>
+      ${site.page
+        ? `<div class="stream-book">📖 <i>Keystone Fly Fishing</i>, p. ${esc(site.page)}</div>`
+        : `<div class="stream-book stream-book-none">Not covered in <i>Keystone Fly Fishing</i></div>`}
+    </a>
+  `).join("");
+
+  const staleNote = opts && opts.stale
+    ? `<div class="stream-stale">Couldn't reach USGS just now — showing the last readings this phone saw.
+         <button class="stream-retry" type="button" onclick="loadStreamConditions()">Try again</button></div>`
+    : "";
+
+  body.innerHTML = staleNote + html;
+}
+
 async function loadStreamConditions() {
   const body = document.getElementById("stream-body");
-  const siteIds = STREAM_SITES.map(s => s.id).join(",");
-  const url = `https://waterservices.usgs.gov/nwis/iv/?sites=${siteIds}&parameterCd=00010,00060,00065&period=PT3H&format=json`;
-
+  body.innerHTML = `<div class="stream-loading">Loading live conditions…</div>`;
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`USGS API error ${res.status}`);
-    const data = await res.json();
-    const series = data.value?.timeSeries || [];
-
-    // Group earliest + latest reading (within the 3hr window) by site number and parameter code
-    const bySite = {};
-    for (const s of series) {
-      const siteNo = s.sourceInfo.siteCode[0].value;
-      const paramCd = s.variable.variableCode[0].value;
-      const values = s.values[0].value;
-      if (!values.length) continue;
-      const earliest = parseFloat(values[0].value);
-      const latest   = parseFloat(values[values.length - 1].value);
-      bySite[siteNo] = bySite[siteNo] || {};
-      bySite[siteNo][paramCd] = { latest, earliest };
-    }
-
-    body.innerHTML = STREAM_SITES.map(site => {
-      const r = bySite[site.id] || {};
-      const tempC  = r["00010"];
-      const flow   = r["00060"];
-      const gauge  = r["00065"];
-      const tempF       = tempC  ? cToF(tempC.latest) : null;
-      const tempFEarly  = tempC  ? cToF(tempC.earliest) : null;
-      const tCls  = tempClass(tempF);
-      return `
-        <a class="stream-card" href="https://waterdata.usgs.gov/monitoring-location/USGS-${site.id}/" target="_blank" rel="noopener">
-          <div class="stream-name">${site.name}<span class="stream-loc">${site.loc}</span></div>
-          <div class="stream-stats">
-            <div class="stream-stat"><span class="stream-stat-val ${tCls}">${tempF != null ? tempF.toFixed(1) + "°F" : "—"}${trendArrow(tempF, tempFEarly, "temp")}</span><span class="stream-stat-label">Temp</span></div>
-            <div class="stream-stat"><span class="stream-stat-val">${flow ? flow.latest.toFixed(1) : "—"}${flow ? trendArrow(flow.latest, flow.earliest, "flow") : ""}</span><span class="stream-stat-label">Flow (cfs)</span></div>
-            <div class="stream-stat"><span class="stream-stat-val">${gauge ? gauge.latest.toFixed(2) + " ft" : "—"}${gauge ? trendArrow(gauge.latest, gauge.earliest, "gauge") : ""}</span><span class="stream-stat-label">Gauge</span></div>
-          </div>
-          ${site.page
-            ? `<div class="stream-book">📖 <i>Keystone Fly Fishing</i>, p. ${site.page}</div>`
-            : `<div class="stream-book stream-book-none">Not covered in <i>Keystone Fly Fishing</i></div>`}
-        </a>
-      `;
-    }).join("");
+    const parsed = parseStreamPayload(await fetchStreamPayload());
+    writeStreamCache(parsed);
+    renderStreams(parsed, { stale: false });
   } catch (e) {
-    body.innerHTML = `<div class="stream-error">Couldn't load stream data right now — try refreshing.</div>`;
+    const cached = readStreamCache();
+    if (cached) {
+      renderStreams(cached, { stale: true });
+    } else {
+      body.innerHTML = `<div class="stream-error">Couldn't load stream data right now.
+        <button class="stream-retry" type="button" onclick="loadStreamConditions()">Try again</button></div>`;
+    }
   }
 }
 
@@ -1209,9 +1302,14 @@ function buildHatchChart() {
     const item = document.createElement('div');
     item.className = 'hatch-item';
     const btns = h.flies.map(f =>
-      `<button class="hatch-fly-btn" onclick="loadFlyFromHatch('${f.replace(/'/g, "\\'")}')">${f}</button>`
+      `<button class="hatch-fly-btn" type="button" data-fly="${esc(f)}">${esc(f)}</button>`
     ).join('');
-    item.innerHTML = `<div class="hatch-bug">${h.bug}</div><div class="hatch-time">⏰ ${h.time}</div><div class="hatch-flies">${btns}</div>`;
+    item.innerHTML = `<div class="hatch-bug">${esc(h.bug)}</div><div class="hatch-time">⏰ ${esc(h.time)}</div><div class="hatch-flies">${btns}</div>`;
+    // Listener instead of an inline onclick — names like "Griffith's Gnat" and
+    // "Dave's Hopper" contain apostrophes that used to need hand-escaping.
+    item.querySelectorAll('.hatch-fly-btn').forEach(b => {
+      b.onclick = () => loadFlyFromHatch(b.dataset.fly);
+    });
     grid.appendChild(item);
   });
 }
@@ -1219,7 +1317,10 @@ function buildHatchChart() {
 function loadFlyFromHatch(name) {
   const btns = document.querySelectorAll('.fly-btn');
   for (const b of btns) {
-    if (b.dataset.fly === name) { b.click(); b.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    // b.click() already renders the recipe and scrolls to it. Do NOT add a second
+    // scrollIntoView here — two smooth scrolls fight and the customer ends up
+    // staring at the pattern pill instead of the materials list.
+    if (b.dataset.fly === name) { b.click(); return; }
   }
 }
 
@@ -1233,8 +1334,8 @@ function showCuratedFly(name, btn) {
 
   const rows = recipe.materials.map(m => `
     <div class="material-row">
-      <span class="material-tag">${m.label}</span>
-      <span class="material-spec"><b>${m.label}:</b> ${m.spec}</span>
+      <span class="material-tag">${esc(m.label)}</span>
+      <span class="material-spec"><b>${esc(m.label)}:</b> ${esc(m.spec)}</span>
     </div>
   `).join('');
 
@@ -1245,9 +1346,9 @@ function showCuratedFly(name, btn) {
       <div class="tool-card">
         <div class="tool-header">
           <span class="tool-icon">${t.icon}</span>
-          <span class="tool-name">${t.name}</span>
+          <span class="tool-name">${esc(t.name)}</span>
         </div>
-        <p class="tool-desc">${t.desc}</p>
+        <p class="tool-desc">${esc(t.desc)}</p>
       </div>
     `).join('');
     toolsSection = `
@@ -1264,11 +1365,11 @@ function showCuratedFly(name, btn) {
   document.getElementById('recipe-output').innerHTML = `
     <div class="recipe-header">
       <div class="recipe-title">
-        <h2>🪝 ${name}</h2>
-        <p>${recipe.desc}</p>
-        <span class="skill-badge skill-${recipe.skill}">${recipe.skill}</span>
+        <h2>🪝 ${esc(name)}</h2>
+        <p>${esc(recipe.desc)}</p>
+        <span class="skill-badge skill-${esc(recipe.skill)}">${esc(recipe.skill)}</span>
       </div>
-      <a class="yt-btn" href="${recipe.yt}" target="_blank">
+      <a class="yt-btn" href="${esc(recipe.yt)}" target="_blank" rel="noopener">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
         Watch Tutorial
       </a>
@@ -1303,11 +1404,11 @@ function renderVideoCards(videos) {
     return `<div class="video-error">No tying videos found for that one — try a different spelling?</div>`;
   }
   return `<div class="video-grid">${videos.map(v => `
-    <a class="video-card" href="https://www.youtube.com/watch?v=${v.videoId}" target="_blank">
-      <img class="video-thumb" src="${v.thumb}" alt="${v.title}" loading="lazy">
+    <a class="video-card" href="https://www.youtube.com/watch?v=${encodeURIComponent(v.videoId)}" target="_blank" rel="noopener">
+      <img class="video-thumb" src="${esc(v.thumb)}" alt="" loading="lazy">
       <div class="video-info">
-        <div class="video-title">${v.title}</div>
-        <div class="video-channel">${v.channel}</div>
+        <div class="video-title">${esc(v.title)}</div>
+        <div class="video-channel">${esc(v.channel)}</div>
       </div>
     </a>
   `).join('')}</div>`;
@@ -1335,7 +1436,7 @@ async function showSearchedFly(query) {
   // Not in our curated list - show a video search and invite a request
   document.getElementById('recipe-output').innerHTML = `
     <div class="not-listed">
-      We don't have a full parts list for <b>"${query}"</b> yet — here's a tying video to check out.
+      We don't have a full parts list for <b>"${esc(query)}"</b> yet — here's a tying video to check out.
       Ask the counter to add it if you'd like the full build list next time!
     </div>
     <div id="video-results"><div class="video-loading">Searching YouTube for tying videos…</div></div>
