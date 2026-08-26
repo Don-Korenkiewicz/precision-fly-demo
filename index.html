@@ -2,8 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Fly Recipe Finder — Precision Fly & Tackle</title>
+<meta name="description" content="Fly tying materials lists, live PA trout stream conditions, and what's hatching right now — a free walk-in tool from Precision Fly &amp; Tackle in Lancaster, PA.">
+<!-- Tints the Safari/Chrome toolbar to match the navy header on a phone -->
+<meta name="theme-color" content="#354751">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Precision Fly &amp; Tackle">
+<meta property="og:title" content="Fly Recipe Finder — Precision Fly &amp; Tackle">
+<meta property="og:description" content="Pick a fly, get the materials list. Plus live PA trout stream temps and this month's hatches.">
+<meta property="og:url" content="https://courageous-otter-c53d22.netlify.app/">
+<meta name="twitter:card" content="summary">
 
 <!-- Google Analytics 4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XQTJVG4C4Y"></script>
@@ -444,6 +455,9 @@
   .temp-warn { color:var(--temp-warn); }
   .temp-bad  { color:var(--temp-bad); }
   .trend-arrow { font-size:11px; color:var(--muted); margin-left:3px; font-weight:400; }
+  /* Little Juniata, Penns and Spring Creek have flow gauges but no thermometer.
+     Say so, so a blank doesn't read as "still loading". */
+  .stat-na { font-size:11px; font-weight:600; color:var(--muted); font-style:italic; }
   .stream-book { font-size:11px; color:var(--muted); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); }
   .stream-book i { color:var(--text); font-style:italic; }
   .stream-book-none { opacity:.7; }
@@ -747,7 +761,7 @@ function streamAdvisory(rows) {
   const cold = withTemp.filter(r => r.tempF < 65).length;
   const bad  = withTemp.filter(r => r.tempF > 70).length;
   const cls  = bad >= withTemp.length / 2 ? "advisory-bad" : (cold ? "advisory-good" : "advisory-warn");
-  const lead = `<b>${cold} of ${withTemp.length}</b> gauged streams are under 65°F right now.`;
+  const lead = `<b>${cold} of ${withTemp.length}</b> temperature-gauged streams are under 65°F right now.`;
   const tail = bad
     ? ` ${bad} ${bad === 1 ? "is" : "are"} over 70°F — please leave those trout alone today.`
     : (cold === withTemp.length ? " Good day to be out." : "");
@@ -786,7 +800,10 @@ function renderStreams(parsed, opts) {
     <a class="stream-card" href="https://waterdata.usgs.gov/monitoring-location/USGS-${site.id}/" target="_blank" rel="noopener">
       <div class="stream-name">${esc(site.name)}<span class="stream-loc">${esc(site.loc)}</span></div>
       <div class="stream-stats">
-        <div class="stream-stat"><span class="stream-stat-val ${tempClass(tempF)}">${tempF != null ? tempF.toFixed(1) + "°F" : "—"}${trendArrow(tempF, tempFEarly, "temp")}</span><span class="stream-stat-label">Temp</span></div>
+        <div class="stream-stat"><span class="stream-stat-val ${tempClass(tempF)}">${
+          tempF != null ? tempF.toFixed(1) + "°F" + trendArrow(tempF, tempFEarly, "temp")
+                        : `<span class="stat-na">${(flow || gauge) ? "no sensor" : "—"}</span>`
+        }</span><span class="stream-stat-label">Temp</span></div>
         <div class="stream-stat"><span class="stream-stat-val">${flow ? flow.latest.toFixed(1) : "—"}${flow ? trendArrow(flow.latest, flow.earliest, "flow") : ""}</span><span class="stream-stat-label">Flow (cfs)</span></div>
         <div class="stream-stat"><span class="stream-stat-val">${gauge ? gauge.latest.toFixed(2) + " ft" : "—"}${gauge ? trendArrow(gauge.latest, gauge.earliest, "gauge") : ""}</span><span class="stream-stat-label">Gauge</span></div>
       </div>
@@ -1896,6 +1913,74 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !document.getElementById('bench-sheet').hidden) closeBench();
 });
 
+// ── Deep links ───────────────────────────────────────────────────────────────
+// ?fly=Adams opens straight to that recipe. That makes a per-bin QR sticker
+// possible ("scan this bin for the recipe") and lets a customer text a pattern
+// to a friend, instead of every QR code in the shop landing on the same page.
+function setDeepLink(params) {
+  try {
+    const url = new URL(location.href);
+    url.search = '';
+    for (const [k, v] of Object.entries(params)) if (v) url.searchParams.set(k, v);
+    history.replaceState(null, '', url);
+  } catch (e) { /* older browsers just keep the plain URL */ }
+}
+
+function flyLink(name) {
+  const url = new URL(location.href);
+  url.search = '';
+  url.searchParams.set('fly', name);
+  return url.toString();
+}
+
+async function shareRecipe(name) {
+  const recipe = FLY_INDEX[name.toLowerCase()]?.recipe;
+  if (!recipe) return;
+  const text = `${name} — fly tying recipe\n\n`
+    + recipe.materials.map(m => `${m.label}: ${m.spec}`).join('\n')
+    + `\n\nvia Precision Fly & Tackle\n${flyLink(name)}`;
+  const btn = document.getElementById('share-recipe-btn');
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: `${name} recipe`, text });
+      trackEvent('recipe_share', { fly_name: name, method: 'share_sheet' });
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    trackEvent('recipe_share', { fly_name: name, method: 'clipboard' });
+    if (btn) {
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = '🔗 Share recipe'; }, 1600);
+    }
+  } catch (e) {
+    if (e && e.name !== 'AbortError' && btn) {
+      btn.textContent = "Couldn't copy";
+      setTimeout(() => { btn.textContent = '🔗 Share recipe'; }, 1600);
+    }
+  }
+}
+
+function applyDeepLink() {
+  const p = new URLSearchParams(location.search);
+  const species = p.get('species');
+  const skill   = p.get('skill');
+  if (species && SPECIES_OPTIONS.some(o => o.key === species)) activeSpecies = species;
+  if (skill && SKILL_OPTIONS.includes(skill)) activeSkill = skill;
+  if (species || skill) { buildSpeciesSelector(); buildSkillFilter(); buildFotw(); buildSelector(); buildHatchChart(); }
+
+  const fly = p.get('fly');
+  const q   = p.get('q');
+  if (fly && FLY_INDEX[fly.toLowerCase()]) {
+    const entry = FLY_INDEX[fly.toLowerCase()];
+    trackEvent('deep_link_open', { fly_name: entry.flyName });
+    showCuratedFly(entry.flyName, document.querySelector(`.fly-btn[data-fly="${CSS.escape(entry.flyName)}"]`));
+  } else if (q) {
+    document.getElementById('search-input').value = q;
+    trackEvent('deep_link_open', { search_term: q });
+    showSearchedFly(q);
+  }
+}
+
 function showCuratedFly(name, btn) {
   if (activeBtn) activeBtn.classList.remove('active');
   activeBtn = btn || null;
@@ -1942,7 +2027,10 @@ function showCuratedFly(name, btn) {
         <h2>🪝 ${esc(name)}</h2>
         <p>${esc(recipe.desc)}</p>
         <span class="skill-badge skill-${esc(recipe.skill)}">${esc(recipe.skill)}</span>
-        <div><button class="add-all-btn" type="button" id="add-all-btn">🧰 Add all ${recipe.materials.length} to my list</button></div>
+        <div>
+          <button class="add-all-btn" type="button" id="add-all-btn">🧰 Add all ${recipe.materials.length} to my list</button>
+          <button class="add-all-btn" type="button" id="share-recipe-btn">🔗 Share recipe</button>
+        </div>
       </div>
       <a class="yt-btn" href="${esc(recipe.yt)}" target="_blank" rel="noopener">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
@@ -1968,6 +2056,8 @@ function showCuratedFly(name, btn) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleRow(row); }
     };
   });
+  setDeepLink({ fly: name });
+  out.querySelector('#share-recipe-btn').onclick = () => shareRecipe(name);
   out.querySelector('#add-all-btn').onclick = () => {
     benchAddAll(name);
     trackEvent('bench_add_pattern', { fly_name: name, materials: recipe.materials.length });
@@ -2037,6 +2127,7 @@ async function showSearchedFly(query) {
   // Not in our curated list. We never guess a materials list, but a near-miss
   // (a typo, or a pattern that uses the material they typed) is worth offering
   // as an explicit "did you mean" the customer has to opt into.
+  setDeepLink({ q: query });
   const near = rankFlies(query, 3).filter(r => r.score > 0);
   const didYouMean = near.length
     ? `<div class="did-you-mean">Did you mean:
@@ -2047,7 +2138,8 @@ async function showSearchedFly(query) {
   document.getElementById('recipe-output').innerHTML = `
     <div class="not-listed">
       We don't have a full parts list for <b>"${esc(query)}"</b> yet — here's a tying video to check out.
-      Ask the counter to add it if you'd like the full build list next time!
+      We'd rather show you nothing than guess a recipe wrong. Your search is logged, and the
+      patterns people ask for most get a full materials list added automatically — check back next week.
     </div>
     ${didYouMean}
     <div id="video-results"><div class="video-loading">Searching YouTube for tying videos…</div></div>
@@ -2184,6 +2276,7 @@ buildSelector();
 buildFotw();
 buildHatchChart();
 renderBenchBar();
+applyDeepLink();
 loadStreamConditions();
 </script>
 </body>
