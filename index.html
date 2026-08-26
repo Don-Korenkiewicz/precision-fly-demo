@@ -274,6 +274,105 @@
     padding:20px; text-align:center; color:var(--muted); font-size:13px;
   }
 
+  /* ── Bench list (the in-store shopping list) ── */
+  .material-row { cursor:pointer; user-select:none; }
+  .material-row:hover { border-color:var(--olive); }
+  .material-row.in-list { border-color:var(--green); background:var(--olive-light); }
+  .material-check {
+    flex-shrink:0; width:24px; height:24px; border-radius:6px;
+    border:1.5px solid var(--border); background:var(--white);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:800; color:var(--muted); line-height:1;
+  }
+  .material-row.in-list .material-check { background:var(--green); border-color:var(--green); color:#fff; }
+
+  .add-all-btn {
+    display:inline-flex; align-items:center; gap:6px; margin-top:8px;
+    padding:8px 16px; border-radius:6px; border:1.5px solid var(--green);
+    background:var(--white); color:var(--green);
+    font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  .add-all-btn:hover { background:var(--green); color:#fff; }
+
+  .bench-bar {
+    position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background:var(--green-dark); color:#fff;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 18px rgba(0,0,0,.22);
+  }
+  .bench-bar[hidden] { display:none; }
+  .bench-bar-text  { font-size:13px; line-height:1.35; }
+  .bench-bar-text b { display:block; font-size:14px; }
+  .bench-bar-text span { color:#a8bcc7; font-size:12px; }
+  .bench-bar-btn {
+    flex-shrink:0; padding:10px 18px; border-radius:8px; border:none;
+    background:var(--green); color:#fff; font-size:14px; font-weight:800;
+    font-family:inherit; cursor:pointer;
+  }
+
+  .bench-sheet {
+    position:fixed; inset:0; z-index:60; background:rgba(20,26,30,.55);
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .bench-sheet[hidden] { display:none; }
+  .bench-panel {
+    background:var(--bg); width:100%; max-width:640px; max-height:92vh;
+    border-radius:16px 16px 0 0; display:flex; flex-direction:column; overflow:hidden;
+  }
+  .bench-head {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:16px 18px; background:var(--green-dark); color:#fff;
+  }
+  .bench-head h2 { font-size:16px; font-weight:800; }
+  .bench-head p  { font-size:12px; color:#a8bcc7; margin-top:2px; }
+  .bench-close {
+    background:none; border:none; color:#fff; font-size:24px; line-height:1;
+    cursor:pointer; padding:0 4px; font-family:inherit;
+  }
+  .bench-body { padding:14px 16px 20px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .bench-group-title {
+    font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.9px;
+    color:var(--muted); margin:16px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--border);
+  }
+  .bench-body .bench-group-title:first-child { margin-top:0; }
+  .bench-item {
+    display:flex; align-items:flex-start; gap:11px; width:100%; text-align:left;
+    background:var(--white); border:1px solid var(--border); border-radius:var(--card-radius);
+    padding:11px 13px; margin-bottom:7px; font-family:inherit; cursor:pointer;
+  }
+  .bench-item.got .bench-spec { text-decoration:line-through; color:var(--muted); }
+  .bench-item.got { opacity:.62; }
+  .bench-spec  { font-size:13px; color:var(--text); line-height:1.45; }
+  .bench-for   { font-size:11px; color:var(--muted); margin-top:3px; }
+  .bench-empty { padding:28px 10px; text-align:center; color:var(--muted); font-size:13px; }
+  .bench-patterns { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:6px; }
+  .bench-chip {
+    display:inline-flex; align-items:center; gap:7px; padding:5px 8px 5px 12px;
+    border-radius:16px; border:1.5px solid var(--gold); background:var(--gold-light);
+    font-size:12px; font-weight:700; color:var(--gold);
+  }
+  .bench-chip button {
+    border:none; background:none; color:var(--gold); font-size:15px; line-height:1;
+    cursor:pointer; padding:0 2px; font-family:inherit;
+  }
+  .bench-actions {
+    display:flex; gap:8px; flex-wrap:wrap;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--border); background:var(--white);
+  }
+  .bench-action {
+    flex:1 1 120px; padding:11px 14px; border-radius:8px; border:1.5px solid var(--border);
+    background:var(--white); color:var(--text);
+    font-size:13px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  .bench-action.primary { background:var(--green); border-color:var(--green); color:#fff; }
+  .bench-action.danger  { color:var(--red); border-color:#f0d4cf; }
+  .bench-progress {
+    font-size:12px; color:var(--muted); margin-bottom:12px;
+    background:var(--gold-light); border-radius:8px; padding:9px 12px;
+  }
+
   /* ── Footer ── */
   .footer {
     background:var(--green-dark); color:#a8bcc7;
@@ -450,7 +549,33 @@
 </div>
 
 <div class="footer">
-  Fly Recipe Finder for <a href="https://precisionflyandtackle.com" target="_blank">Precision Fly & Tackle</a> — Lancaster, PA's premier full-service fly shop
+  Fly Recipe Finder for <a href="https://precisionflyandtackle.com" target="_blank" rel="noopener">Precision Fly & Tackle</a> — Lancaster, PA's premier full-service fly shop
+</div>
+
+<!-- Bench list: the running shopping list a customer builds while walking the shelves -->
+<div class="bench-bar" id="bench-bar" hidden>
+  <div class="bench-bar-text">
+    <b id="bench-bar-count"></b>
+    <span id="bench-bar-sub"></span>
+  </div>
+  <button class="bench-bar-btn" type="button" id="bench-open">View list</button>
+</div>
+
+<div class="bench-sheet" id="bench-sheet" hidden role="dialog" aria-modal="true" aria-label="My bench list">
+  <div class="bench-panel">
+    <div class="bench-head">
+      <div>
+        <h2>🧰 My Bench List</h2>
+        <p id="bench-sub"></p>
+      </div>
+      <button class="bench-close" type="button" id="bench-close" aria-label="Close list">&times;</button>
+    </div>
+    <div class="bench-body" id="bench-body"></div>
+    <div class="bench-actions">
+      <button class="bench-action primary" type="button" id="bench-share">Copy / Share</button>
+      <button class="bench-action danger" type="button" id="bench-clear">Clear list</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1411,6 +1536,251 @@ function loadFlyFromHatch(name) {
   }
 }
 
+// ── Bench list ───────────────────────────────────────────────────────────────
+// The actual walk-in job: you're standing at the material bins with a phone and
+// you need to know what to pull. Customers tap materials into a running list
+// across several patterns; the list dedupes, groups by where things live in a
+// fly shop, and survives a lock screen via localStorage.
+const BENCH_KEY = 'pf_bench_v1';
+
+// Ordered — first matching rule wins. Grouped by shop shelf, not by position on
+// the fly, because "hooks" is a bin and "tail" isn't.
+const MATERIAL_GROUPS = [
+  { name: 'Hooks',                   test: s => /\bhook\b|articulated shank/.test(s) },
+  { name: 'Thread',                  test: s => /\bthread\b|denier/.test(s) },
+  { name: 'Beads, Weight & Eyes',    test: s => /\bbead\b|tungsten|dumbbell|barbell|lead-free|\blead\b|3d eyes|stick-on eye/.test(s) },
+  { name: 'Wire, Tinsel & Flash',    test: s => /\bwire\b|tinsel|flashabou|krystal flash|\bflash\b|crystal flash/.test(s) },
+  // Hair before synthetics: "white calf body hair or poly yarn" is a hair-bin item.
+  { name: 'Hair & Fur',              test: s => /elk hair|deer hair|calf|moose|bucktail|squirrel|rabbit|zonker|\bhairs?\b|\bfur\b/.test(s) },
+  { name: 'Foam, Rubber & Synthetics', test: s => /\bfoam\b|rubber leg|thin skin|ep fiber|body fiber|micro ?fibbet|poly yarn|antron|synthetic fiber/.test(s) },
+  { name: 'Feathers & Hackle',       test: s => /hackle|feather|\bcdc\b|marabou|biot|partridge|\bhen\b|turkey|pheasant|peacock|goose|quill|saddle|grizzly/.test(s) },
+  { name: 'Dubbing',                 test: s => /dubbing|ice dub|superfine/.test(s) },
+  { name: 'Chenille, Yarn & Floss',  test: s => /chenille|\byarn\b|floss/.test(s) },
+  { name: 'Finish & Adhesives',      test: s => /uv resin|epoxy|zap-a-gap|\bglue|head cement/.test(s) },
+  { name: 'Other',                   test: () => true },
+];
+
+// The label wins outright where it's unambiguous — otherwise "tied to ride
+// hook-point-up" on a Weight line would file lead eyes under Hooks.
+const LABEL_GROUP = {
+  hook: 'Hooks', shanks: 'Hooks',
+  thread: 'Thread',
+  bead: 'Beads, Weight & Eyes', eyes: 'Beads, Weight & Eyes', weight: 'Beads, Weight & Eyes',
+  finish: 'Finish & Adhesives',
+};
+
+function materialGroup(label, spec) {
+  const l = String(label).toLowerCase();
+  if (LABEL_GROUP[l]) return LABEL_GROUP[l];
+  const s = String(spec).toLowerCase();
+  return (MATERIAL_GROUPS.find(g => g.test(s)) || MATERIAL_GROUPS[MATERIAL_GROUPS.length - 1]).name;
+}
+
+function specKey(spec) { return normalize(spec); }
+
+let bench = { flies: {}, gathered: {} };
+try {
+  const saved = JSON.parse(localStorage.getItem(BENCH_KEY) || 'null');
+  if (saved && saved.flies) bench = { flies: saved.flies || {}, gathered: saved.gathered || {} };
+} catch (e) { /* corrupt or unavailable storage — start fresh */ }
+
+function saveBench() {
+  try { localStorage.setItem(BENCH_KEY, JSON.stringify(bench)); } catch (e) { /* private mode */ }
+}
+
+function benchFlyNames() {
+  return Object.keys(bench.flies).filter(n => (bench.flies[n] || []).length && FLY_INDEX[n.toLowerCase()]);
+}
+
+function benchHas(flyName, idx) {
+  return (bench.flies[flyName] || []).includes(idx);
+}
+
+function benchToggle(flyName, idx) {
+  const cur = bench.flies[flyName] || [];
+  bench.flies[flyName] = cur.includes(idx) ? cur.filter(i => i !== idx) : cur.concat(idx).sort((a, b) => a - b);
+  if (!bench.flies[flyName].length) delete bench.flies[flyName];
+  saveBench();
+  renderBenchBar();
+}
+
+function benchAddAll(flyName) {
+  const recipe = FLY_INDEX[flyName.toLowerCase()]?.recipe;
+  if (!recipe) return;
+  bench.flies[flyName] = recipe.materials.map((_, i) => i);
+  saveBench();
+  renderBenchBar();
+}
+
+function benchRemoveFly(flyName) {
+  delete bench.flies[flyName];
+  saveBench();
+  renderBenchBar();
+  renderBenchSheet();
+}
+
+// Collapse every selected material across every pattern into deduped,
+// shelf-grouped lines. Two dry flies that both want "Standard dry fly hook,
+// size 12-18" become one line, credited to both patterns.
+function benchItems() {
+  const byKey = new Map();
+  for (const flyName of benchFlyNames()) {
+    const recipe = FLY_INDEX[flyName.toLowerCase()].recipe;
+    for (const idx of bench.flies[flyName]) {
+      const m = recipe.materials[idx];
+      if (!m) continue;
+      const key = specKey(m.spec);
+      if (!byKey.has(key)) {
+        byKey.set(key, { key, label: m.label, spec: m.spec, group: materialGroup(m.label, m.spec), flies: [] });
+      }
+      const item = byKey.get(key);
+      if (!item.flies.includes(flyName)) item.flies.push(flyName);
+    }
+  }
+  const items = [...byKey.values()];
+  const order = MATERIAL_GROUPS.map(g => g.name);
+  items.sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group) || a.spec.localeCompare(b.spec));
+  return items;
+}
+
+function renderBenchBar() {
+  const bar   = document.getElementById('bench-bar');
+  const items = benchItems();
+  const flies = benchFlyNames();
+  if (!items.length) {
+    bar.hidden = true;
+    document.body.style.paddingBottom = '';
+    return;
+  }
+  const got = items.filter(i => bench.gathered[i.key]).length;
+  document.getElementById('bench-bar-count').textContent =
+    `🧰 ${items.length} material${items.length === 1 ? '' : 's'} to grab`;
+  document.getElementById('bench-bar-sub').textContent =
+    `${flies.length} pattern${flies.length === 1 ? '' : 's'}${got ? ` · ${got} gathered` : ''}`;
+  bar.hidden = false;
+  document.body.style.paddingBottom = bar.offsetHeight + 'px';
+  if (!document.getElementById('bench-sheet').hidden) renderBenchSheet();
+}
+
+function renderBenchSheet() {
+  const body  = document.getElementById('bench-body');
+  const items = benchItems();
+  const flies = benchFlyNames();
+
+  if (!items.length) {
+    document.getElementById('bench-sub').textContent = 'Nothing added yet';
+    body.innerHTML = `<div class="bench-empty">Tap any material on a pattern to add it here,
+      or use “Add all to my list”.</div>`;
+    return;
+  }
+
+  const got = items.filter(i => bench.gathered[i.key]).length;
+  document.getElementById('bench-sub').textContent =
+    `${got} of ${items.length} gathered · ${flies.length} pattern${flies.length === 1 ? '' : 's'}`;
+
+  const chips = `<div class="bench-patterns">${flies.map(f => `
+    <span class="bench-chip">${esc(f)}<button type="button" data-remove-fly="${esc(f)}" aria-label="Remove ${esc(f)}">&times;</button></span>
+  `).join('')}</div>`;
+
+  const progress = `<div class="bench-progress">Tap a line once you've pulled it off the shelf — your list stays put if the screen locks.</div>`;
+
+  let html = chips + progress;
+  let lastGroup = null;
+  for (const it of items) {
+    if (it.group !== lastGroup) {
+      html += `<div class="bench-group-title">${esc(it.group)}</div>`;
+      lastGroup = it.group;
+    }
+    const isGot = !!bench.gathered[it.key];
+    html += `
+      <button class="bench-item${isGot ? ' got' : ''}" type="button" data-key="${esc(it.key)}">
+        <span class="material-check">${isGot ? '✓' : ''}</span>
+        <span>
+          <span class="bench-spec"><b>${esc(it.label)}:</b> ${esc(it.spec)}</span>
+          <span class="bench-for">for ${esc(it.flies.join(', '))}</span>
+        </span>
+      </button>`;
+  }
+  body.innerHTML = html;
+
+  body.querySelectorAll('[data-key]').forEach(el => {
+    el.onclick = () => {
+      const k = el.dataset.key;
+      bench.gathered[k] = !bench.gathered[k];
+      if (!bench.gathered[k]) delete bench.gathered[k];
+      trackEvent('bench_material_gathered', { gathered: !!bench.gathered[k] });
+      saveBench();
+      renderBenchSheet();
+      renderBenchBar();
+    };
+  });
+  body.querySelectorAll('[data-remove-fly]').forEach(el => {
+    el.onclick = () => benchRemoveFly(el.dataset.removeFly);
+  });
+}
+
+function benchAsText() {
+  const items = benchItems();
+  const flies = benchFlyNames();
+  let out = `Fly tying list — Precision Fly & Tackle\nPatterns: ${flies.join(', ')}\n`;
+  let lastGroup = null;
+  for (const it of items) {
+    if (it.group !== lastGroup) { out += `\n${it.group.toUpperCase()}\n`; lastGroup = it.group; }
+    out += `- ${it.label}: ${it.spec}  (${it.flies.join(', ')})\n`;
+  }
+  return out;
+}
+
+async function shareBench() {
+  const text = benchAsText();
+  const title = 'My fly tying list';
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text });
+      trackEvent('bench_share', { method: 'share_sheet', patterns: benchFlyNames().length });
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    trackEvent('bench_share', { method: 'clipboard', patterns: benchFlyNames().length });
+    flashBenchAction('Copied!');
+  } catch (e) {
+    // AbortError just means the customer dismissed the share sheet.
+    if (e && e.name !== 'AbortError') flashBenchAction("Couldn't copy");
+  }
+}
+
+function flashBenchAction(msg) {
+  const btn = document.getElementById('bench-share');
+  const original = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(() => { btn.textContent = original; }, 1600);
+}
+
+function openBench() {
+  renderBenchSheet();
+  document.getElementById('bench-sheet').hidden = false;
+  trackEvent('bench_open', { patterns: benchFlyNames().length, materials: benchItems().length });
+}
+function closeBench() { document.getElementById('bench-sheet').hidden = true; }
+
+document.getElementById('bench-open').onclick  = openBench;
+document.getElementById('bench-close').onclick = closeBench;
+document.getElementById('bench-share').onclick = shareBench;
+document.getElementById('bench-clear').onclick = () => {
+  if (!confirm('Clear your whole bench list?')) return;
+  bench = { flies: {}, gathered: {} };
+  saveBench();
+  renderBenchBar();
+  renderBenchSheet();
+  closeBench();
+};
+document.getElementById('bench-sheet').onclick = e => {
+  if (e.target.id === 'bench-sheet') closeBench();  // tap the backdrop to dismiss
+};
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('bench-sheet').hidden) closeBench();
+});
+
 function showCuratedFly(name, btn) {
   if (activeBtn) activeBtn.classList.remove('active');
   activeBtn = btn || null;
@@ -1419,8 +1789,10 @@ function showCuratedFly(name, btn) {
   const recipe = FLY_INDEX[name.toLowerCase()]?.recipe;
   if (!recipe) return;
 
-  const rows = recipe.materials.map(m => `
-    <div class="material-row">
+  const rows = recipe.materials.map((m, i) => `
+    <div class="material-row${benchHas(name, i) ? ' in-list' : ''}" data-idx="${i}"
+         role="button" tabindex="0" aria-pressed="${benchHas(name, i)}">
+      <span class="material-check">${benchHas(name, i) ? '✓' : '+'}</span>
       <span class="material-tag">${esc(m.label)}</span>
       <span class="material-spec"><b>${esc(m.label)}:</b> ${esc(m.spec)}</span>
     </div>
@@ -1455,6 +1827,7 @@ function showCuratedFly(name, btn) {
         <h2>🪝 ${esc(name)}</h2>
         <p>${esc(recipe.desc)}</p>
         <span class="skill-badge skill-${esc(recipe.skill)}">${esc(recipe.skill)}</span>
+        <div><button class="add-all-btn" type="button" id="add-all-btn">🧰 Add all ${recipe.materials.length} to my list</button></div>
       </div>
       <a class="yt-btn" href="${esc(recipe.yt)}" target="_blank" rel="noopener">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
@@ -1464,7 +1837,33 @@ function showCuratedFly(name, btn) {
     <div class="materials-section">${rows}</div>
     ${toolsSection}
   `;
-  document.getElementById('recipe-output').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const out = document.getElementById('recipe-output');
+  const toggleRow = row => {
+    benchToggle(name, Number(row.dataset.idx));
+    const on = benchHas(name, Number(row.dataset.idx));
+    row.classList.toggle('in-list', on);
+    row.setAttribute('aria-pressed', String(on));
+    row.querySelector('.material-check').textContent = on ? '✓' : '+';
+    trackEvent('bench_material_toggle', { fly_name: name, added: on });
+  };
+  out.querySelectorAll('.material-row').forEach(row => {
+    row.onclick = () => toggleRow(row);
+    row.onkeydown = e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleRow(row); }
+    };
+  });
+  out.querySelector('#add-all-btn').onclick = () => {
+    benchAddAll(name);
+    trackEvent('bench_add_pattern', { fly_name: name, materials: recipe.materials.length });
+    out.querySelectorAll('.material-row').forEach(row => {
+      row.classList.add('in-list');
+      row.setAttribute('aria-pressed', 'true');
+      row.querySelector('.material-check').textContent = '✓';
+    });
+  };
+
+  out.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ── YouTube search (for anything not in the curated list) ───────────────────
@@ -1668,6 +2067,7 @@ buildSpeciesSelector();
 buildSelector();
 buildFotw();
 buildHatchChart();
+renderBenchBar();
 loadStreamConditions();
 </script>
 </body>
