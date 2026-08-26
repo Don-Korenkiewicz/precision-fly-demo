@@ -150,6 +150,16 @@
   .fly-btn:hover   { border-color:var(--olive); color:var(--green); background:var(--olive-light); }
   .fly-btn.active  { background:var(--green); color:#fff; border-color:var(--green); }
 
+  .skill-filter { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .skill-btn {
+    padding:6px 13px; border-radius:16px; border:1.5px solid var(--border);
+    background:var(--white); color:var(--muted);
+    font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  .skill-btn:hover  { border-color:var(--olive); color:var(--green); }
+  .skill-btn.active { background:var(--gold); border-color:var(--gold); color:#fff; }
+  .no-match { padding:14px 4px 2px; font-size:13px; color:var(--muted); }
+
   .category-label {
     width:100%; font-size:10px; font-weight:700; text-transform:uppercase;
     letter-spacing:.8px; color:var(--muted); padding-top:12px; padding-bottom:2px;
@@ -438,6 +448,23 @@
   .stream-book i { color:var(--text); font-style:italic; }
   .stream-book-none { opacity:.7; }
   .stream-book-none i { color:var(--muted); }
+  .stream-advisory {
+    margin:4px 2px 8px; padding:11px 13px; border-radius:8px;
+    font-size:12.5px; line-height:1.5; border:1px solid;
+  }
+  .stream-advisory b { font-weight:800; }
+  .advisory-good { background:#e9f5e9; border-color:var(--temp-good); color:#255025; }
+  .advisory-warn { background:#fdf1e0; border-color:var(--temp-warn); color:#7a4d10; }
+  .advisory-bad  { background:#fbe7e4; border-color:var(--temp-bad);  color:#7c2a1e; }
+
+  .stream-controls { display:flex; gap:6px; margin:0 2px 8px; }
+  .stream-sort {
+    flex:1; padding:7px 10px; border-radius:16px; border:1.5px solid var(--border);
+    background:var(--white); color:var(--muted);
+    font-size:11.5px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  .stream-sort.active { background:var(--water); border-color:var(--water); color:#fff; }
+
   .stream-stale {
     background:#fdf1e0; border:1px solid var(--temp-warn); color:#7a4d10;
     border-radius:8px; padding:10px 12px; margin:4px 2px 10px; font-size:12px; line-height:1.5;
@@ -524,7 +551,9 @@
   <!-- Fly Selector -->
   <div class="selector-card">
     <label>Or Choose a Popular Pattern</label>
+    <div class="skill-filter" id="skill-filter"></div>
     <div class="fly-grid" id="fly-grid"></div>
+    <div class="no-match" id="no-match" hidden>No patterns match those filters yet — try widening them.</div>
   </div>
 
   <!-- What's Hatching Now -->
@@ -542,7 +571,7 @@
     <div class="stream-body" id="stream-body">
       <div class="stream-loading">Loading live conditions…</div>
     </div>
-    <div class="stream-footer-note">Live data via USGS · tap a stream for full details</div>
+    <div class="stream-footer-note" id="stream-note">Live data via USGS · tap a stream for full details</div>
   </div>
 </div>
 
@@ -709,17 +738,49 @@ function writeStreamCache(parsed) {
   } catch (e) { /* private mode / quota — cache is a nicety, not required */ }
 }
 
+// 65°F is the usual "back off" line for wild trout in PA; above ~70°F fighting a
+// fish is likely to kill it. Turning eleven raw numbers into that one sentence is
+// the whole point of the panel.
+function streamAdvisory(rows) {
+  const withTemp = rows.filter(r => r.tempF != null);
+  if (!withTemp.length) return "";
+  const cold = withTemp.filter(r => r.tempF < 65).length;
+  const bad  = withTemp.filter(r => r.tempF > 70).length;
+  const cls  = bad >= withTemp.length / 2 ? "advisory-bad" : (cold ? "advisory-good" : "advisory-warn");
+  const lead = `<b>${cold} of ${withTemp.length}</b> gauged streams are under 65°F right now.`;
+  const tail = bad
+    ? ` ${bad} ${bad === 1 ? "is" : "are"} over 70°F — please leave those trout alone today.`
+    : (cold === withTemp.length ? " Good day to be out." : "");
+  return `<div class="stream-advisory ${cls}">${lead}${tail}</div>`;
+}
+
+let streamSort = "temp";   // "temp" = coldest (most fishable) first, "list" = curated order
+
 function renderStreams(parsed, opts) {
   const body = document.getElementById("stream-body");
   const bySite = parsed.bySite || {};
 
-  const rows = STREAM_SITES.map(site => {
+  let rows = STREAM_SITES.map(site => {
     const r = bySite[site.id] || {};
     const tempC = r["00010"], flow = r["00060"], gauge = r["00065"];
     const tempF      = tempC ? cToF(tempC.latest)   : null;
     const tempFEarly = tempC && tempC.earliest != null ? cToF(tempC.earliest) : null;
     return { site, tempF, tempFEarly, flow, gauge };
   });
+
+  const advisory = streamAdvisory(rows);
+
+  if (streamSort === "temp") {
+    // Ungauged streams sink to the bottom rather than sorting as 0°F.
+    rows = rows.slice().sort((a, b) =>
+      (a.tempF == null) - (b.tempF == null) || (a.tempF - b.tempF));
+  }
+
+  const controls = `
+    <div class="stream-controls">
+      <button type="button" class="stream-sort${streamSort === "temp" ? " active" : ""}" data-sort="temp">Coldest first</button>
+      <button type="button" class="stream-sort${streamSort === "list" ? " active" : ""}" data-sort="list">Our list</button>
+    </div>`;
 
   const html = rows.map(({ site, tempF, tempFEarly, flow, gauge }) => `
     <a class="stream-card" href="https://waterdata.usgs.gov/monitoring-location/USGS-${site.id}/" target="_blank" rel="noopener">
@@ -736,11 +797,37 @@ function renderStreams(parsed, opts) {
   `).join("");
 
   const staleNote = opts && opts.stale
-    ? `<div class="stream-stale">Couldn't reach USGS just now — showing the last readings this phone saw.
-         <button class="stream-retry" type="button" onclick="loadStreamConditions()">Try again</button></div>`
+    ? `<div class="stream-stale">Couldn't reach USGS just now — showing the last readings this phone saw${
+         parsed.cachedAt ? ` (${fmtWhen(parsed.cachedAt)})` : ""}.
+         <button class="stream-retry" type="button" id="stream-retry-btn">Try again</button></div>`
     : "";
 
-  body.innerHTML = staleNote + html;
+  body.innerHTML = staleNote + advisory + controls + html;
+
+  body.querySelectorAll(".stream-sort").forEach(b => {
+    b.onclick = () => {
+      streamSort = b.dataset.sort;
+      trackEvent("stream_sort", { sort: streamSort });
+      renderStreams(parsed, opts);
+    };
+  });
+  const retryBtn = body.querySelector("#stream-retry-btn");
+  if (retryBtn) retryBtn.onclick = () => loadStreamConditions();
+
+  // "Live data via USGS" was a promise the panel couldn't always keep — say
+  // exactly how old the reading is instead.
+  const note = document.getElementById("stream-note");
+  if (note) {
+    note.textContent = parsed.observedAt
+      ? `USGS readings as of ${fmtWhen(parsed.observedAt)} · tap a stream for full details`
+      : "Live data via USGS · tap a stream for full details";
+  }
+}
+
+function fmtWhen(ts) {
+  try {
+    return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  } catch (e) { return ""; }
 }
 
 async function loadStreamConditions() {
@@ -1358,8 +1445,33 @@ const SPECIES_OPTIONS = [
 ];
 let activeSpecies = 'All';
 
+// Skill filter: someone who has tied three flies in their life wants to know
+// which of these they can actually finish tonight.
+const SKILL_OPTIONS = ['Any level', 'Beginner', 'Intermediate', 'Advanced'];
+let activeSkill = 'Any level';
+
 function matchesSpecies(recipe) {
-  return activeSpecies === 'All' || recipe.species.includes(activeSpecies);
+  return (activeSpecies === 'All' || recipe.species.includes(activeSpecies))
+      && (activeSkill === 'Any level' || recipe.skill === activeSkill);
+}
+
+function buildSkillFilter() {
+  const wrap = document.getElementById('skill-filter');
+  wrap.innerHTML = '';
+  SKILL_OPTIONS.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'skill-btn' + (opt === activeSkill ? ' active' : '');
+    btn.textContent = opt;
+    btn.onclick = () => {
+      activeSkill = opt;
+      trackEvent('select_skill', { skill: opt });
+      buildSkillFilter();
+      buildFotw();
+      buildSelector();
+    };
+    wrap.appendChild(btn);
+  });
 }
 
 function buildSpeciesSelector() {
@@ -1410,6 +1522,7 @@ function buildFotw() {
 function buildSelector() {
   const grid = document.getElementById('fly-grid');
   grid.innerHTML = '';
+  let shown = 0;
   for (const [cat, flies] of Object.entries(FLIES)) {
     const matchingNames = Object.keys(flies).filter(name => matchesSpecies(flies[name]));
     if (matchingNames.length === 0) continue;
@@ -1428,8 +1541,10 @@ function buildSelector() {
         showCuratedFly(flyName, btn);
       };
       grid.appendChild(btn);
+      shown++;
     }
   }
+  document.getElementById('no-match').hidden = shown > 0;
 }
 
 // ── What's Hatching Now (seasonal hatch chart) ──────────────────────────────
@@ -2064,6 +2179,7 @@ document.querySelectorAll('.section-nav button').forEach(b => {
 
 // ── Init ────────────────────────────────────────────────────────────────────
 buildSpeciesSelector();
+buildSkillFilter();
 buildSelector();
 buildFotw();
 buildHatchChart();
