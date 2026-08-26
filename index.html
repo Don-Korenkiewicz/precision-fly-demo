@@ -1527,27 +1527,32 @@ function seasonalPicks() {
   return names;
 }
 
+// Returns { names, seasonal } — seasonal is false when we fell back, so the
+// card doesn't claim "what's working in August" about a generic bass list.
 function fotwCandidates() {
   const base = FLIES_OF_THE_WEEK.length ? FLIES_OF_THE_WEEK : seasonalPicks();
   const picks = base.filter(n => {
     const e = FLY_INDEX[n.toLowerCase()];
     return e && matchesSpecies(e.recipe);
   });
-  if (picks.length) return picks.slice(0, 6);
+  if (picks.length) return { names: picks.slice(0, 6), seasonal: !FLIES_OF_THE_WEEK.length };
   // Nothing seasonal survives the current filters — bass species and the
   // Advanced-only filter both used to leave this card as a bare heading with
   // nothing under it. Show whatever does match instead.
-  return Object.values(FLY_INDEX).filter(e => matchesSpecies(e.recipe)).slice(0, 6).map(e => e.flyName);
+  return {
+    names: Object.values(FLY_INDEX).filter(e => matchesSpecies(e.recipe)).slice(0, 6).map(e => e.flyName),
+    seasonal: false,
+  };
 }
 
 function buildFotw() {
   const grid = document.getElementById('fotw-grid');
   const card = document.getElementById('fotw-card');
   grid.innerHTML = '';
-  const names = fotwCandidates();
+  const { names, seasonal } = fotwCandidates();
   card.hidden = names.length === 0;
-  const sub = document.getElementById('fotw-sub');
-  sub.textContent = FLIES_OF_THE_WEEK.length ? '' : `What's working in ${MONTH_NAMES[new Date().getMonth()]}`;
+  document.getElementById('fotw-sub').textContent =
+    seasonal ? `What's working in ${MONTH_NAMES[new Date().getMonth()]}` : 'Shop favorites';
   for (const flyName of names) {
     const entry = FLY_INDEX[flyName.toLowerCase()];
     if (!entry) continue; // skip if a name gets typo'd or removed later
