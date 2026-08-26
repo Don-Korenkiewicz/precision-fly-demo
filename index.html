@@ -140,6 +140,7 @@
   }
   .fotw-card label { font-size:12px; font-weight:800; color:var(--gold);
     text-transform:uppercase; letter-spacing:.7px; display:block; margin-bottom:10px; }
+  .fotw-sub { font-weight:600; color:var(--muted); text-transform:none; letter-spacing:0; margin-left:6px; }
   .fotw-card .fly-btn.active { background:var(--gold); border-color:var(--gold); }
   .fotw-card .fly-btn:hover { border-color:var(--gold); color:var(--gold); }
 
@@ -557,13 +558,13 @@
   </div>
 
   <!-- Flies of the Week -->
-  <div class="fotw-card" id="sec-patterns">
-    <label>🔥 Flies of the Week</label>
+  <div class="fotw-card" id="fotw-card">
+    <label>🔥 Flies of the Week <span class="fotw-sub" id="fotw-sub"></span></label>
     <div class="fly-grid" id="fotw-grid"></div>
   </div>
 
   <!-- Fly Selector -->
-  <div class="selector-card">
+  <div class="selector-card" id="sec-patterns">
     <label>Or Choose a Popular Pattern</label>
     <div class="skill-filter" id="skill-filter"></div>
     <div class="fly-grid" id="fly-grid"></div>
@@ -1513,16 +1514,43 @@ function buildSpeciesSelector() {
 // ── Quick-pick selector ──────────────────────────────────────────────────────
 let activeBtn = null;
 
-// Update this list whenever new patterns get added to the curated FLIES object.
-const FLIES_OF_THE_WEEK = ["Indicator Ant", "Foam Grasshopper", "Inchworm", "Japanese Beetle"];
+// Manual override. Leave it empty and the picks come from this month's hatch
+// chart instead, so the section can't go stale in November because nobody
+// remembered to edit it — the weekly auto-add job never touched this list.
+const FLIES_OF_THE_WEEK = [];
+
+function seasonalPicks() {
+  const names = [];
+  for (const h of (HATCHES[new Date().getMonth() + 1] || [])) {
+    for (const f of h.flies) if (!names.includes(f)) names.push(f);
+  }
+  return names;
+}
+
+function fotwCandidates() {
+  const base = FLIES_OF_THE_WEEK.length ? FLIES_OF_THE_WEEK : seasonalPicks();
+  const picks = base.filter(n => {
+    const e = FLY_INDEX[n.toLowerCase()];
+    return e && matchesSpecies(e.recipe);
+  });
+  if (picks.length) return picks.slice(0, 6);
+  // Nothing seasonal survives the current filters — bass species and the
+  // Advanced-only filter both used to leave this card as a bare heading with
+  // nothing under it. Show whatever does match instead.
+  return Object.values(FLY_INDEX).filter(e => matchesSpecies(e.recipe)).slice(0, 6).map(e => e.flyName);
+}
 
 function buildFotw() {
   const grid = document.getElementById('fotw-grid');
+  const card = document.getElementById('fotw-card');
   grid.innerHTML = '';
-  for (const flyName of FLIES_OF_THE_WEEK) {
+  const names = fotwCandidates();
+  card.hidden = names.length === 0;
+  const sub = document.getElementById('fotw-sub');
+  sub.textContent = FLIES_OF_THE_WEEK.length ? '' : `What's working in ${MONTH_NAMES[new Date().getMonth()]}`;
+  for (const flyName of names) {
     const entry = FLY_INDEX[flyName.toLowerCase()];
     if (!entry) continue; // skip if a name gets typo'd or removed later
-    if (!matchesSpecies(entry.recipe)) continue;
     const btn = document.createElement('button');
     btn.className = 'fly-btn';
     btn.textContent = flyName;
