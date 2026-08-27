@@ -161,6 +161,26 @@
   }
   .fly-btn:hover   { border-color:var(--olive); color:var(--green); background:var(--olive-light); }
   .fly-btn.active  { background:var(--green); color:#fff; border-color:var(--green); }
+  .category-accordion {
+    border-bottom:1px solid var(--border); padding:2px 0;
+  }
+  .category-accordion:first-of-type { border-top:none; }
+  .category-accordion summary {
+    list-style:none; cursor:pointer; padding:12px 4px; font-size:13px; font-weight:700;
+    color:var(--text); display:flex; align-items:center; justify-content:space-between;
+  }
+  .category-accordion summary::-webkit-details-marker { display:none; }
+  .category-accordion summary::after {
+    content:'+'; color:var(--muted); font-weight:400; font-size:16px;
+  }
+  .category-accordion[open] summary::after { content:'\2212'; }
+  .fly-grid-inner { display:flex; flex-wrap:wrap; gap:8px; padding:2px 4px 14px; }
+  .show-all-btn {
+    padding:8px 16px; border-radius:20px; border:1.5px dashed var(--border);
+    background:none; color:var(--muted); font-size:13px; font-weight:600;
+    font-family:inherit; cursor:pointer;
+  }
+  .show-all-btn:hover { border-color:var(--olive); color:var(--green); }
 
   .skill-filter { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
   .skill-btn {
@@ -195,6 +215,12 @@
   }
   .species-btn:hover  { background:var(--water-light); }
   .species-btn.active { background:var(--water); color:#fff; }
+  .species-more {
+    padding:8px 14px; border-radius:20px; border:1.5px solid var(--water);
+    background:var(--white); color:var(--water); font-size:13px; font-weight:700;
+    font-family:inherit; cursor:pointer; margin-top:2px;
+  }
+  .species-more.active { background:var(--water); color:#fff; }
 
   /* ── Skill badge ── */
   .skill-badge {
@@ -390,6 +416,10 @@
   }
   .bench-action.primary { background:var(--green); border-color:var(--green); color:#fff; }
   .bench-action.danger  { color:var(--red); border-color:#f0d4cf; }
+  .bench-app-link {
+    text-align:center; padding:0 16px 14px; font-size:12px; color:var(--muted);
+  }
+  .bench-app-link a { color:var(--green); font-weight:700; text-decoration:underline; }
   .bench-progress {
     font-size:12px; color:var(--muted); margin-bottom:12px;
     background:var(--gold-light); border-radius:8px; padding:9px 12px;
@@ -402,6 +432,7 @@
   }
   .footer a { color:#c8d8e0; }
   .footer-app-link { margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.15); }
+  .footer-app-link a { text-decoration:underline; }
 
   /* ── Specialty Tools section ── */
   .tools-section {
@@ -548,13 +579,14 @@
   <div class="species-card">
     <label>🎣 What Are You Fishing For?</label>
     <div class="species-grid" id="species-grid"></div>
+    <select class="species-more" id="species-more"></select>
   </div>
 
   <!-- Recipe Output -->
   <div id="recipe-output">
     <div class="empty-state">
       <h3>🪝 Search above, or pick a pattern below</h3>
-      <p>Full materials list for our core patterns, plus a tying video for anything else.</p>
+      <p id="empty-state-copy">Full materials list for hundreds of patterns, plus a tying video for anything else.</p>
     </div>
   </div>
 
@@ -566,7 +598,7 @@
 
   <!-- Fly Selector -->
   <div class="selector-card" id="sec-patterns">
-    <label>Or Choose a Popular Pattern</label>
+    <label id="selector-label">Browse Patterns</label>
     <div class="skill-filter" id="skill-filter"></div>
     <div class="fly-grid" id="fly-grid"></div>
     <div class="no-match" id="no-match" hidden>No patterns match those filters yet — try widening them.</div>
@@ -621,6 +653,7 @@
       <button class="bench-action primary" type="button" id="bench-share">Copy / Share</button>
       <button class="bench-action danger" type="button" id="bench-clear">Clear list</button>
     </div>
+    <div class="bench-app-link">Heading out? Log the trip with <a href="https://apps.apple.com/app/id6795986460" target="_blank" rel="noopener">Seam on the App Store</a> 🎣</div>
   </div>
 </div>
 
@@ -14643,23 +14676,34 @@ function inferSpecialtyTools(materials) {
 }
 
 // ── Species filter ────────────────────────────────────────────────────────────
-const SPECIES_OPTIONS = [
-  { key: 'All',               label: 'All Species' },
-  { key: 'Trout',             label: 'Trout' },
-  { key: 'Smallmouth Bass',   label: 'Smallmouth Bass' },
-  { key: 'Largemouth Bass',   label: 'Largemouth Bass' },
-  { key: 'Panfish',           label: 'Panfish' },
-  { key: 'Pike',              label: 'Pike' },
-  { key: 'Musky',             label: 'Musky' },
-  { key: 'Steelhead',         label: 'Steelhead' },
-  { key: 'Atlantic Salmon',   label: 'Atlantic Salmon' },
-  { key: 'Striped Bass',      label: 'Striped Bass' },
-  { key: 'Bonefish',          label: 'Bonefish' },
-  { key: 'Permit',            label: 'Permit' },
-  { key: 'Redfish',           label: 'Redfish' },
-  { key: 'Common Carp',       label: 'Carp' },
-  { key: 'American Shad',     label: 'Shad' },
+// Local-first: Lancaster PA is trout/bass/panfish/carp country, so those five
+// (plus All) are the only always-visible chips. Everything else the library
+// carries a species tag for — saltwater, steelhead, salmon runs, and anything
+// added later — lives in the "More species" dropdown, built from the real data
+// below rather than a hand-maintained list, so a species can't silently fall out
+// of every filter option the way the old fixed 15-item list did.
+const PRIMARY_SPECIES_OPTIONS = [
+  { key: 'All',             label: 'All Species' },
+  { key: 'Trout',           label: 'Trout' },
+  { key: 'Smallmouth Bass', label: 'Smallmouth Bass' },
+  { key: 'Largemouth Bass', label: 'Largemouth Bass' },
+  { key: 'Panfish',         label: 'Panfish' },
+  { key: 'Common Carp',     label: 'Carp' },
 ];
+
+function moreSpeciesOptions() {
+  const primaryKeys = new Set(PRIMARY_SPECIES_OPTIONS.map(o => o.key));
+  const counts = {};
+  for (const flies of Object.values(FLIES)) {
+    for (const r of Object.values(flies)) {
+      for (const s of r.species) {
+        if (primaryKeys.has(s)) continue;
+        counts[s] = (counts[s] || 0) + 1;
+      }
+    }
+  }
+  return Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+}
 let activeSpecies = 'All';
 
 // Skill filter: someone who has tied three flies in their life wants to know
@@ -14691,23 +14735,36 @@ function buildSkillFilter() {
   });
 }
 
+function selectSpecies(key) {
+  activeSpecies = key;
+  trackEvent('select_species', { species: key });
+  buildSpeciesSelector();
+  buildFotw();
+  buildSelector();
+  buildHatchChart();
+}
+
 function buildSpeciesSelector() {
   const grid = document.getElementById('species-grid');
   grid.innerHTML = '';
-  SPECIES_OPTIONS.forEach(opt => {
+  PRIMARY_SPECIES_OPTIONS.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'species-btn' + (opt.key === activeSpecies ? ' active' : '');
     btn.textContent = opt.label;
-    btn.onclick = () => {
-      activeSpecies = opt.key;
-      trackEvent('select_species', { species: opt.key });
-      buildSpeciesSelector();
-      buildFotw();
-      buildSelector();
-      buildHatchChart();
-    };
+    btn.onclick = () => selectSpecies(opt.key);
     grid.appendChild(btn);
   });
+
+  const more = document.getElementById('species-more');
+  const primaryKeys = new Set(PRIMARY_SPECIES_OPTIONS.map(o => o.key));
+  const isMoreActive = !primaryKeys.has(activeSpecies);
+  more.innerHTML = '<option value="">More species\u2026</option>' +
+    moreSpeciesOptions().map(s =>
+      `<option value="${esc(s)}"${s === activeSpecies ? ' selected' : ''}>${esc(s)}</option>`
+    ).join('');
+  if (!isMoreActive) more.value = '';
+  more.classList.toggle('active', isMoreActive);
+  more.onchange = () => { if (more.value) selectSpecies(more.value); };
 }
 
 // ── Quick-pick selector ──────────────────────────────────────────────────────
@@ -14768,6 +14825,24 @@ function buildFotw() {
   }
 }
 
+// Chips beyond this count stay collapsed behind a "Show all N" button per
+// category, so browsing 963+ patterns doesn't mean scrolling past 900 buttons
+// to reach the hatch chart / stream sidebar below.
+const QUICKPICK_PREVIEW = 12;
+
+function makeFlyBtn(flyName) {
+  const btn = document.createElement('button');
+  btn.className = 'fly-btn';
+  btn.textContent = flyName;
+  btn.dataset.fly = flyName;
+  btn.onclick = () => {
+    document.getElementById('search-input').value = '';
+    trackEvent('select_fly', { fly_name: flyName, source: 'quickpick' });
+    showCuratedFly(flyName, btn);
+  };
+  return btn;
+}
+
 function buildSelector() {
   const grid = document.getElementById('fly-grid');
   grid.innerHTML = '';
@@ -14775,23 +14850,33 @@ function buildSelector() {
   for (const [cat, flies] of Object.entries(FLIES)) {
     const matchingNames = Object.keys(flies).filter(name => matchesSpecies(flies[name]));
     if (matchingNames.length === 0) continue;
-    const catEl = document.createElement('span');
-    catEl.className = 'category-label';
-    catEl.textContent = cat;
-    grid.appendChild(catEl);
-    for (const flyName of matchingNames) {
-      const btn = document.createElement('button');
-      btn.className = 'fly-btn';
-      btn.textContent = flyName;
-      btn.dataset.fly = flyName;
-      btn.onclick = () => {
-        document.getElementById('search-input').value = '';
-        trackEvent('select_fly', { fly_name: flyName, source: 'quickpick' });
-        showCuratedFly(flyName, btn);
+    shown += matchingNames.length;
+
+    const details = document.createElement('details');
+    details.className = 'category-accordion';
+    const summary = document.createElement('summary');
+    summary.textContent = `${cat} \u00b7 ${matchingNames.length}`;
+    details.appendChild(summary);
+
+    const body = document.createElement('div');
+    body.className = 'fly-grid-inner';
+    details.appendChild(body);
+
+    matchingNames.slice(0, QUICKPICK_PREVIEW).forEach(name => body.appendChild(makeFlyBtn(name)));
+
+    if (matchingNames.length > QUICKPICK_PREVIEW) {
+      const showAllBtn = document.createElement('button');
+      showAllBtn.type = 'button';
+      showAllBtn.className = 'show-all-btn';
+      showAllBtn.textContent = `Show all ${matchingNames.length}`;
+      showAllBtn.onclick = () => {
+        matchingNames.slice(QUICKPICK_PREVIEW).forEach(name => body.insertBefore(makeFlyBtn(name), showAllBtn));
+        showAllBtn.remove();
       };
-      grid.appendChild(btn);
-      shown++;
+      body.appendChild(showAllBtn);
     }
+
+    grid.appendChild(details);
   }
   document.getElementById('no-match').hidden = shown > 0;
 }
@@ -14891,13 +14976,15 @@ function buildHatchChart() {
 }
 
 function loadFlyFromHatch(name) {
-  const btns = document.querySelectorAll('.fly-btn');
-  for (const b of btns) {
-    // b.click() already renders the recipe and scrolls to it. Do NOT add a second
-    // scrollIntoView here — two smooth scrolls fight and the customer ends up
-    // staring at the pattern pill instead of the materials list.
-    if (b.dataset.fly === name) { b.click(); return; }
-  }
+  // Call showCuratedFly directly instead of finding-and-clicking a .fly-btn —
+  // with the quick-pick grid now collapsed into closed-by-default accordions
+  // (and skill/species filters able to hide a chip entirely), the button for
+  // a given fly frequently isn't in the DOM at all. showCuratedFly already
+  // handles a null button fine (only used for the cosmetic active-state), and
+  // already does its own scrollIntoView, so this stays a one-line delegate.
+  if (!FLY_INDEX[name.toLowerCase()]) return;
+  const btn = document.querySelector(`.fly-btn[data-fly="${CSS.escape(name)}"]`);
+  showCuratedFly(name, btn);
 }
 
 // ── Bench list ───────────────────────────────────────────────────────────────
@@ -15196,7 +15283,7 @@ function applyDeepLink() {
   const p = new URLSearchParams(location.search);
   const species = p.get('species');
   const skill   = p.get('skill');
-  if (species && SPECIES_OPTIONS.some(o => o.key === species)) activeSpecies = species;
+  if (species && (PRIMARY_SPECIES_OPTIONS.some(o => o.key === species) || moreSpeciesOptions().includes(species))) activeSpecies = species;
   if (skill && SKILL_OPTIONS.includes(skill)) activeSkill = skill;
   if (species || skill) { buildSpeciesSelector(); buildSkillFilter(); buildFotw(); buildSelector(); buildHatchChart(); }
 
@@ -15443,7 +15530,7 @@ function renderSuggestions() {
   suggestBox.innerHTML = suggestions.map((s, i) => s.kind === 'fly'
     ? `<button class="suggest-item" type="button" role="option" data-i="${i}">
          <div class="suggest-name">${highlight(s.flyName, q)}</div>
-         <div class="suggest-meta">${esc(s.cat)} · ${esc(s.skill)}${s.material ? ' · uses ' + esc(q) : ''} · full materials list</div>
+         <div class="suggest-meta">${esc(s.cat)} · ${esc(s.skill)}${s.material ? ' · uses ' + esc(q) : ''}</div>
        </button>`
     : `<button class="suggest-item suggest-fallback" type="button" role="option" data-i="${i}">
          <div class="suggest-name">Search tying videos for "${esc(s.query)}"</div>
@@ -15502,6 +15589,13 @@ document.querySelectorAll('.section-nav button').forEach(b => {
 });
 
 // ── Init ────────────────────────────────────────────────────────────────────
+// Total across every category, computed once from the real data so this never
+// goes stale as the weekly auto-add job (or a future manual batch) grows the library.
+const TOTAL_PATTERN_COUNT = SEARCH_ENTRIES.length;
+document.getElementById('empty-state-copy').textContent =
+  `Full materials list for all ${TOTAL_PATTERN_COUNT} patterns, plus a tying video for anything else.`;
+document.getElementById('selector-label').textContent = `Browse All ${TOTAL_PATTERN_COUNT} Patterns`;
+
 buildSpeciesSelector();
 buildSkillFilter();
 buildSelector();
