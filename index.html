@@ -5873,7 +5873,7 @@ const FLIES = {
     "Woolly Bugger": {
       desc: "The most productive streamer ever. Tie it in black, olive, and white. Size 4–10.",
       yt: "https://www.youtube.com/results?search_query=Woolly+Bugger+fly+tying+tutorial",
-      species: ["Trout", "Smallmouth", "Largemouth"],
+      species: ["Trout", "Smallmouth Bass", "Largemouth Bass"],
       skill: "Beginner",
       materials: [
         { label:"Hook", spec:"3XL streamer hook, size 4–10" },
@@ -5887,7 +5887,7 @@ const FLIES = {
     "Clouser Minnow": {
       desc: "Bob Clouser's legendary minnow pattern. Size 2–8.",
       yt: "https://www.youtube.com/results?search_query=Clouser+Minnow+fly+tying+tutorial",
-      species: ["Trout", "Smallmouth", "Largemouth"],
+      species: ["Trout", "Smallmouth Bass", "Largemouth Bass"],
       skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard streamer hook, size 2–8" },
@@ -8379,7 +8379,7 @@ const FLIES = {
     "Sneaky Pete Popper": {
       desc: "Classic sliding-head foam popper — the workhorse smallmouth surface fly. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Sneaky+Pete+Popper+fly+tying+tutorial",
-      species: ["Smallmouth", "Largemouth"],
+      species: ["Smallmouth Bass", "Largemouth Bass"],
       skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"3XL streamer/popper hook, size 4–8" },
@@ -8394,7 +8394,7 @@ const FLIES = {
     "Foam Gurgler": {
       desc: "Jack Gartside's foam-backed surface fly — no hard popper head needed, and the folded foam lip 'gurgles' on the retrieve. Easier first popper-style tie than a hard-body popper. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Gurgler+fly+tying+tutorial",
-      species: ["Smallmouth", "Largemouth"],
+      species: ["Smallmouth Bass", "Largemouth Bass"],
       skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard or 2XL streamer hook, size 4–8" },
@@ -8409,7 +8409,7 @@ const FLIES = {
     "Near Nuff Crayfish": {
       desc: "Dave Whitlock's classic crayfish imitation — smallmouth eat more crayfish than almost anything else, so this belongs in every box. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Near+Nuff+Crayfish+fly+tying+tutorial",
-      species: ["Smallmouth", "Largemouth"],
+      species: ["Smallmouth Bass", "Largemouth Bass"],
       skill: "Advanced",
       materials: [
         { label:"Hook", spec:"2XL–3XL streamer hook, size 4–8" },
@@ -8425,7 +8425,7 @@ const FLIES = {
     "Murray's Hellgrammite": {
       desc: "Harry Murray's Shenandoah smallmouth staple — imitates the hellgrammite nymphs smallmouth key in on year-round. Size 4–8.",
       yt: "https://www.youtube.com/results?search_query=Murray%27s+Hellgrammite+fly+tying+tutorial",
-      species: ["Smallmouth"],
+      species: ["Smallmouth Bass"],
       skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"3XL streamer hook, size 4–8" },
@@ -8440,7 +8440,7 @@ const FLIES = {
     "Dahlberg Diver": {
       desc: "Larry Dahlberg's spun deer-hair diver — the flat clipped head pushes water and dives on the pause, then pops back up. A different kind of topwater action than a hard-body popper. Size 2–6.",
       yt: "https://www.youtube.com/results?search_query=Dahlberg+Diver+fly+tying+tutorial",
-      species: ["Smallmouth", "Largemouth"],
+      species: ["Smallmouth Bass", "Largemouth Bass"],
       skill: "Advanced",
       materials: [
         { label:"Hook", spec:"Standard or 2XL streamer hook, size 2–6" },
@@ -13128,7 +13128,7 @@ const FLIES = {
     "Henshall": {
       desc: "A wet fly named for 19th-century angling writer James Henshall, tied with a peacock herl body and brown hackle, historically fished for both trout and bass. Size 8-12.",
       yt: "https://www.youtube.com/results?search_query=Henshall+fly+tying+tutorial",
-      species: ["Trout", "Bass"],
+      species: ["Trout", "Smallmouth Bass", "Largemouth Bass"],
       skill: "Intermediate",
       materials: [
         { label:"Hook", spec:"Standard wet fly hook, size 8-12" },
@@ -14642,10 +14642,21 @@ function inferSpecialtyTools(materials) {
 
 // ── Species filter ────────────────────────────────────────────────────────────
 const SPECIES_OPTIONS = [
-  { key: 'All',        label: 'All Species' },
-  { key: 'Trout',      label: 'Trout' },
-  { key: 'Smallmouth', label: 'Smallmouth Bass' },
-  { key: 'Largemouth', label: 'Largemouth Bass' },
+  { key: 'All',               label: 'All Species' },
+  { key: 'Trout',             label: 'Trout' },
+  { key: 'Smallmouth Bass',   label: 'Smallmouth Bass' },
+  { key: 'Largemouth Bass',   label: 'Largemouth Bass' },
+  { key: 'Panfish',           label: 'Panfish' },
+  { key: 'Pike',              label: 'Pike' },
+  { key: 'Musky',             label: 'Musky' },
+  { key: 'Steelhead',         label: 'Steelhead' },
+  { key: 'Atlantic Salmon',   label: 'Atlantic Salmon' },
+  { key: 'Striped Bass',      label: 'Striped Bass' },
+  { key: 'Bonefish',          label: 'Bonefish' },
+  { key: 'Permit',            label: 'Permit' },
+  { key: 'Redfish',           label: 'Redfish' },
+  { key: 'Common Carp',       label: 'Carp' },
+  { key: 'American Shad',     label: 'Shad' },
 ];
 let activeSpecies = 'All';
 
