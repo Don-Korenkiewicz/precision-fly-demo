@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://courageous-otter-c53d22.netlify.app/sitemap.xml
